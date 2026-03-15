@@ -240,7 +240,7 @@ async function main() {
   const args = process.argv.slice(2);
   const options = parseArguments();
 
-  console.log("🎥 Claude Code Web UI Demo Recorder");
+  console.log("🎥 Qwen Code Web UI Demo Recorder");
   console.log("=====================================");
 
   await checkDependencies();
