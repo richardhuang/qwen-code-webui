@@ -5,31 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.0] - 2026-03-16
 
 ### Added
 
-- feat: 添加版本号显示和实验性功能开关
-  - 后端添加 `/api/version` 端点返回版本号
-  - 前端添加 `useVersion` hook 获取版本
-  - 设置界面添加实验性功能区域，支持切换 `useWebUIComponents`
-  - 设置界面底部显示版本号
+- Version display in settings page with `/api/version` endpoint
+- Experimental features toggle for `useWebUIComponents` setting
+- `useVersion` hook for fetching application version
+- `@qwen-code/webui` component library integration
+  - `MessageAdapter` for message format conversion
+  - `WebUIChatMessages` component for chat rendering
+  - `WebPlatformContext` for platform abstraction
 
 ### Changed
 
-- docs: 将 `QWEN.md` 改名为 `PROJECT_CONTEXT.md` 并移到 `docs/` 目录下
+- Renamed `QWEN.md` to `PROJECT_CONTEXT.md` and moved to `docs/` directory
+- Transformed project from Claude Code Web UI to Qwen Code Web UI
+- Updated SDK dependency from `@anthropic-ai/claude-code` to `@qwen-code/sdk`
 
 ### Removed
 
-- docs: 删除 `CLAUDE.md` 文件（已过时）
+- `CLAUDE.md` file (outdated)
+- `.mcp.json` configuration (no longer needed)
+- `.qwen/skills/ui-test/scripts/` directory (migrated)
+- `docs/images/` directory (unused screenshots)
 
-### Features
+### Fixed
 
-- feat: 集成 `@qwen-code/webui` 组件库
-  - 添加消息适配器 `MessageAdapter` 用于格式转换
-  - 添加 `WebUIChatMessages` 组件用于渲染聊天消息
-  - 添加 `WebPlatformContext` 用于平台抽象
-  - 支持实验性功能开关控制组件使用
+- TypeScript errors in `MessageAdapter` (unused imports, type conversion)
+- Backend service crashing frequently after startup
+- Project list API to read from `~/.qwen/projects` directory
+- Project path decoding with hyphens
+- Deno runtime `serve()` return type
+- Broken symlinks causing packaging warnings
 
 ## [0.1.56](https://github.com/sugyan/claude-code-webui/compare/0.1.55...0.1.56) - 2025-09-18
 - chore(deps): Bump @hono/node-server from 1.17.0 to 1.19.1 in /backend by @dependabot[bot] in https://github.com/sugyan/claude-code-webui/pull/314
