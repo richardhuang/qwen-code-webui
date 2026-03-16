@@ -20,6 +20,8 @@ interface CollapsibleDetailsProps {
   showPreview?: boolean;
   previewContent?: string;
   previewSummary?: string;
+  /** When true, collapsed state shows only a minimal header with no padding/border */
+  compact?: boolean;
 }
 
 export function CollapsibleDetails({
@@ -33,6 +35,7 @@ export function CollapsibleDetails({
   showPreview = true,
   previewContent,
   previewSummary,
+  compact = false,
 }: CollapsibleDetailsProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const hasDetails = details.trim().length > 0;
@@ -64,12 +67,19 @@ export function CollapsibleDetails({
   const shouldShowPreview =
     showPreview && !isExpanded && hasDetails && contentPreview.hasMore;
 
+  // Compact mode: show minimal header when collapsed
+  const isCompactCollapsed = compact && !isExpanded;
+
   return (
     <div
-      className={`mb-3 p-3 rounded-lg ${colorScheme.bg} border ${colorScheme.border}`}
+      className={`mb-2 rounded-lg ${
+        isCompactCollapsed
+          ? "px-2 py-1"
+          : `p-3 ${colorScheme.bg} border ${colorScheme.border}`
+      }`}
     >
       <div
-        className={`${colorScheme.header} text-xs font-medium mb-1 flex items-center gap-2 ${isCollapsible ? "cursor-pointer hover:opacity-80" : ""}`}
+        className={`${colorScheme.header} text-xs font-medium flex items-center gap-2 ${isCollapsible ? "cursor-pointer hover:opacity-80" : ""} ${!isCompactCollapsed ? "mb-1" : ""}`}
         role={isCollapsible ? "button" : undefined}
         tabIndex={isCollapsible ? 0 : undefined}
         aria-expanded={isCollapsible ? isExpanded : undefined}
