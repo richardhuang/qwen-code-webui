@@ -80,12 +80,16 @@ function isToolUseError(content: string): boolean {
  */
 export class UnifiedMessageProcessor {
   private toolUseCache = new Map<string, ToolCache>();
+  private processedToolResults = new Set<string>();
+  private processedToolUses = new Set<string>();
 
   /**
    * Clear the tool use cache
    */
   public clearCache(): void {
     this.toolUseCache.clear();
+    this.processedToolResults.clear();
+    this.processedToolUses.clear();
   }
 
   /**
@@ -150,6 +154,17 @@ export class UnifiedMessageProcessor {
     options: ProcessingOptions,
     toolUseResult?: unknown,
   ): void {
+    // Get cached tool_use information to determine tool name
+    const toolUseId = contentItem.tool_use_id || "";
+    
+    // Deduplication: check if this tool_result has already been processed
+    if (this.processedToolResults.has(toolUseId)) {
+      return;
+    }
+    
+    // Mark this tool_result as processed
+    this.processedToolResults.add(toolUseId);
+
     const content =
       typeof contentItem.content === "string"
         ? contentItem.content
@@ -165,8 +180,6 @@ export class UnifiedMessageProcessor {
       return;
     }
 
-    // Get cached tool_use information to determine tool name
-    const toolUseId = contentItem.tool_use_id || "";
     const cachedToolInfo = this.getCachedToolInfo(toolUseId);
     const toolName = cachedToolInfo?.name || "Tool";
 
@@ -235,6 +248,18 @@ export class UnifiedMessageProcessor {
     context: ProcessingContext,
     options: ProcessingOptions,
   ): void {
+    const toolUseId = contentItem.id || "";
+    
+    // Deduplication: check if this tool_use has already been processed
+    if (toolUseId && this.processedToolUses.has(toolUseId)) {
+      return;
+    }
+    
+    // Mark this tool_use as processed
+    if (toolUseId) {
+      this.processedToolUses.add(toolUseId);
+    }
+
     // Cache tool_use information for later permission error handling and tool_result correlation
     if (contentItem.id && contentItem.name) {
       this.cacheToolUse(
