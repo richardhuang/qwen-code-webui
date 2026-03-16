@@ -6,10 +6,11 @@ description: Build packages and create GitHub release with downloadable assets
 # Overview
 
 This skill automates the release process:
-1. Build offline installation packages for multiple platforms
-2. Create a git tag for the release
-3. Create a GitHub release
-4. Upload packages as release assets
+1. Bump version (optional)
+2. Build offline installation packages for multiple platforms
+3. Create a git tag for the release
+4. Create a GitHub release
+5. Upload packages as release assets
 
 # Prerequisites
 
@@ -29,7 +30,28 @@ cat backend/package.json | grep '"version"'
 git tag -l | tail -5
 ```
 
-## 2. Build Packages
+## 2. Bump Version (Optional)
+
+```bash
+# Bump patch version (0.1.0 -> 0.1.1)
+bash scripts/package.sh --bump patch
+
+# Bump minor version (0.1.0 -> 0.2.0)
+bash scripts/package.sh --bump minor
+
+# Bump major version (0.1.0 -> 1.0.0)
+bash scripts/package.sh --bump major
+
+# Build without version bump
+bash scripts/package.sh
+```
+
+The `--bump` option will:
+- Increment the version in `backend/package.json`
+- Build all platform packages with the new version
+- Show next steps for creating the release
+
+## 3. Build Packages
 
 ```bash
 # Run the packaging script
@@ -42,7 +64,7 @@ This creates packages in `packages/` directory:
 - `qwen-code-webui-v{VERSION}-{DATE}-macOS-x64.tar.gz`
 - `qwen-code-webui-v{VERSION}-{DATE}-macOS-arm64.tar.gz`
 
-## 3. Create Git Tag
+## 4. Create Git Tag
 
 ```bash
 # Create annotated tag
@@ -56,14 +78,14 @@ Bug Fixes:
 - Fix 1"
 ```
 
-## 4. Push Tag to GitHub
+## 5. Push Tag to GitHub
 
 ```bash
 # Push the tag
 git push origin v{VERSION}
 ```
 
-## 5. Create GitHub Release
+## 6. Create GitHub Release
 
 ```bash
 gh release create v{VERSION} \
@@ -86,13 +108,13 @@ qwen-code-webui
 **Full Changelog**: https://github.com/{OWNER}/{REPO}/commits/v{VERSION}"
 ```
 
-## 6. Upload Packages to Release
+## 7. Upload Packages to Release
 
 ```bash
 gh release upload v{VERSION} packages/*.tar.gz --clobber
 ```
 
-## 7. Verify Release
+## 8. Verify Release
 
 ```bash
 # View release details
@@ -108,11 +130,13 @@ When user asks to create a release:
 
 1. First check if there are uncommitted changes
 2. Get the current version from `backend/package.json`
-3. Ask user to confirm the version or specify a new one
-4. Run `bash scripts/package.sh` to build packages
-5. Create tag and push to GitHub
-6. Create release with release notes
-7. Upload all packages from `packages/` directory
+3. Ask user to confirm the version or specify a bump type (patch/minor/major)
+4. Run `bash scripts/package.sh --bump <type>` to bump version and build packages
+   - Or run `bash scripts/package.sh` to build without version bump
+5. Commit the version change if bumped
+6. Create tag and push to GitHub
+7. Create release with release notes
+8. Upload all packages from `packages/` directory
 
 # Release Notes Template
 
