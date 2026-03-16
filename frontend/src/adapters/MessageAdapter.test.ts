@@ -11,7 +11,7 @@ import {
   isTodoMessage,
   isThinkingMessage,
 } from "./MessageAdapter";
-import type { AllMessage, ChatMessage, ToolResultMessage, TodoMessage } from "../types";
+import type { AllMessage } from "../types";
 
 describe("MessageAdapter", () => {
   describe("adaptMessagesToWebUI", () => {

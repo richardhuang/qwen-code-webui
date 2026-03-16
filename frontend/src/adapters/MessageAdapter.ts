@@ -7,12 +7,8 @@
 
 import type {
   AllMessage,
-  ChatMessage,
   ToolResultMessage,
-  ThinkingMessage,
-  PlanMessage,
   TodoMessage,
-  SystemMessage,
 } from "../types";
 import type {
   ChatMessageData,
@@ -104,12 +100,20 @@ function convertToolResultToToolCall(
 
   const kind = kindMap[message.toolName] || message.toolName.toLowerCase();
 
+  // Convert unknown to string | object | undefined
+  const rawInput: string | object | undefined =
+    message.toolUseResult !== undefined
+      ? typeof message.toolUseResult === "object"
+        ? message.toolUseResult as object
+        : String(message.toolUseResult)
+      : undefined;
+
   return {
     toolCallId: `tool-${message.timestamp}`,
     kind,
     title: message.toolName,
     status: "completed" as const,
-    rawInput: message.toolUseResult,
+    rawInput,
     content: [
       {
         type: "content",
