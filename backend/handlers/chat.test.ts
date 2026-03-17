@@ -166,6 +166,40 @@ describe("Chat Handler - Permission Mode Tests", () => {
       });
     });
 
+    it("should pass permissionMode 'yolo' to Qwen SDK", async () => {
+      const chatRequest: ChatRequest = {
+        message: "Test message",
+        requestId: "test-yolo",
+        permissionMode: "yolo",
+      };
+
+      mockContext.req.json = vi.fn().mockResolvedValue(chatRequest);
+
+      mockQuery.mockReturnValue({
+        [Symbol.asyncIterator]: async function* () {
+          yield {
+            type: "assistant",
+            message: { content: [{ type: "text", text: "Response" }] },
+            session_id: "test-session",
+            parent_tool_use_id: null,
+          } as any;
+        },
+        interrupt: vi.fn(),
+        next: vi.fn(),
+        return: vi.fn(),
+        throw: vi.fn(),
+      } as any);
+
+      await handleChatRequest(mockContext, requestAbortControllers);
+
+      expect(mockQuery).toHaveBeenCalledWith({
+        prompt: "Test message",
+        options: expect.objectContaining({
+          permissionMode: "yolo",
+        }),
+      });
+    });
+
     it("should not include permissionMode in options when undefined", async () => {
       const chatRequest: ChatRequest = {
         message: "Test message",
