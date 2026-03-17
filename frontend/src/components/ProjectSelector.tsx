@@ -8,6 +8,30 @@ import { SettingsModal } from "./SettingsModal";
 
 const LAST_PROJECT_KEY = "qwen-code-last-project";
 
+/**
+ * Sort projects by hierarchy (parent directories first) and alphabetically
+ * - Parent directories come before their children
+ * - Sibling directories are sorted alphabetically (case-insensitive)
+ */
+function sortProjects(projects: ProjectInfo[]): ProjectInfo[] {
+  return [...projects].sort((a, b) => {
+    const aParts = a.path.split("/").filter(Boolean);
+    const bParts = b.path.split("/").filter(Boolean);
+
+    // Compare path segments one by one
+    const minLen = Math.min(aParts.length, bParts.length);
+    for (let i = 0; i < minLen; i++) {
+      if (aParts[i] !== bParts[i]) {
+        // Different parent at this level, sort alphabetically
+        return aParts[i].localeCompare(bParts[i], undefined, { sensitivity: "base" });
+      }
+    }
+
+    // If all compared segments are equal, shorter path (parent) comes first
+    return aParts.length - bParts.length;
+  });
+}
+
 export function ProjectSelector() {
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
@@ -51,13 +75,15 @@ export function ProjectSelector() {
         throw new Error(`Failed to load projects: ${response.statusText}`);
       }
       const data: ProjectsResponse = await response.json();
-      setProjects(data.projects);
+      // Sort projects: parent directories first, then alphabetically
+      const sortedProjects = sortProjects(data.projects);
+      setProjects(sortedProjects);
 
       // Set default selection to most recently used project
-      if (data.projects.length > 0) {
+      if (sortedProjects.length > 0) {
         const lastProject = localStorage.getItem(LAST_PROJECT_KEY);
         if (lastProject) {
-          const lastIndex = data.projects.findIndex((p) => p.path === lastProject);
+          const lastIndex = sortedProjects.findIndex((p) => p.path === lastProject);
           if (lastIndex !== -1) {
             setSelectedIndex(lastIndex);
           }
