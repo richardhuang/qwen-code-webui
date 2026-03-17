@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { FolderIcon } from "@heroicons/react/24/outline";
 import type { ProjectsResponse, ProjectInfo } from "../types";
@@ -6,8 +6,11 @@ import { getProjectsUrl } from "../config/api";
 import { SettingsButton } from "./SettingsButton";
 import { SettingsModal } from "./SettingsModal";
 
+const LAST_PROJECT_KEY = "qwen-code-last-project";
+
 export function ProjectSelector() {
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -16,6 +19,29 @@ export function ProjectSelector() {
   useEffect(() => {
     loadProjects();
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev + 1) % projects.length);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev - 1 + projects.length) % projects.length);
+      } else if (e.key === "Enter" && projects.length > 0) {
+        e.preventDefault();
+        const selectedProject = projects[selectedIndex];
+        if (selectedProject) {
+          handleProjectSelect(selectedProject.path);
+        }
+      }
+    };
+
+    if (projects.length > 0) {
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [projects, selectedIndex]);
 
   const loadProjects = async () => {
     try {
@@ -26,6 +52,17 @@ export function ProjectSelector() {
       }
       const data: ProjectsResponse = await response.json();
       setProjects(data.projects);
+
+      // Set default selection to most recently used project
+      if (data.projects.length > 0) {
+        const lastProject = localStorage.getItem(LAST_PROJECT_KEY);
+        if (lastProject) {
+          const lastIndex = data.projects.findIndex((p) => p.path === lastProject);
+          if (lastIndex !== -1) {
+            setSelectedIndex(lastIndex);
+          }
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load projects");
     } finally {
@@ -33,12 +70,15 @@ export function ProjectSelector() {
     }
   };
 
-  const handleProjectSelect = (projectPath: string) => {
+  const handleProjectSelect = useCallback((projectPath: string) => {
+    // Save to localStorage for next time
+    localStorage.setItem(LAST_PROJECT_KEY, projectPath);
+    
     const normalizedPath = projectPath.startsWith("/")
       ? projectPath
       : `/${projectPath}`;
     navigate(`/projects${normalizedPath}`);
-  };
+  }, [navigate]);
 
   const handleSettingsClick = () => {
     setIsSettingsOpen(true);
@@ -83,16 +123,36 @@ export function ProjectSelector() {
               <h2 className="text-slate-700 dark:text-slate-300 text-lg font-medium mb-4">
                 Recent Projects
               </h2>
-              {projects.map((project) => (
+              {projects.map((project, index) => (
                 <button
                   key={project.path}
-                  onClick={() => handleProjectSelect(project.path)}
-                  className="w-full flex items-center gap-3 p-4 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors text-left"
+                  onClick={() => {
+                    setSelectedIndex(index);
+                    handleProjectSelect(project.path);
+                  }}
+                  className={`w-full flex items-center gap-3 p-4 border rounded-lg transition-colors text-left ${
+                    index === selectedIndex
+                      ? "bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 ring-2 ring-blue-500"
+                      : "bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700"
+                  }`}
                 >
-                  <FolderIcon className="h-5 w-5 text-slate-500 dark:text-slate-400 flex-shrink-0" />
-                  <span className="text-slate-800 dark:text-slate-200 font-mono text-sm">
+                  <FolderIcon className={`h-5 w-5 flex-shrink-0 ${
+                    index === selectedIndex
+                      ? "text-blue-500 dark:text-blue-400"
+                      : "text-slate-500 dark:text-slate-400"
+                  }`} />
+                  <span className={`font-mono text-sm flex-1 ${
+                    index === selectedIndex
+                      ? "text-blue-800 dark:text-blue-200 font-semibold"
+                      : "text-slate-800 dark:text-slate-200"
+                  }`}>
                     {project.path}
                   </span>
+                  {index === 0 && (
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      Press Enter
+                    </span>
+                  )}
                 </button>
               ))}
             </>
