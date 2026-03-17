@@ -14,10 +14,12 @@ import { usePermissionMode } from "../hooks/chat/usePermissionMode";
 import { useAbortController } from "../hooks/chat/useAbortController";
 import { useAutoHistoryLoader } from "../hooks/useHistoryLoader";
 import { useSettings } from "../hooks/useSettings";
+import { useExpandThinking } from "../hooks/useSettings";
 import { SettingsButton } from "./SettingsButton";
 import { SettingsModal } from "./SettingsModal";
 import { HistoryButton } from "./chat/HistoryButton";
 import { ProjectSwitchButton } from "./chat/ProjectSwitchButton";
+import { ExpandThinkingButton } from "./chat/ExpandThinkingButton";
 import { ChatInput } from "./chat/ChatInput";
 import { ChatMessages } from "./chat/ChatMessages";
 import { WebUIChatMessages } from "./chat/WebUIChatMessages";
@@ -33,6 +35,7 @@ export function ChatPage() {
   const [searchParams] = useSearchParams();
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const { experimental } = useSettings();
+  const { expandThinking, toggleExpandThinking } = useExpandThinking();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Extract and normalize working directory from URL
@@ -480,6 +483,12 @@ export function ChatPage() {
           </div>
           <div className="flex items-center gap-2">
             <ProjectSwitchButton onClick={handleBackToProjects} />
+            {!isHistoryView && (
+              <ExpandThinkingButton
+                isExpanded={expandThinking}
+                onClick={toggleExpandThinking}
+              />
+            )}
             {!isHistoryView && <HistoryButton onClick={handleHistoryClick} />}
             <SettingsButton onClick={handleSettingsClick} />
           </div>
@@ -539,9 +548,17 @@ export function ChatPage() {
           <>
             {/* Chat Messages */}
             {experimental.useWebUIComponents ? (
-              <WebUIChatMessages messages={messages} isLoading={isLoading} />
+              <WebUIChatMessages
+                messages={messages}
+                isLoading={isLoading}
+                expandThinking={expandThinking}
+              />
             ) : (
-              <ChatMessages messages={messages} isLoading={isLoading} />
+              <ChatMessages
+                messages={messages}
+                isLoading={isLoading}
+                expandThinking={expandThinking}
+              />
             )}
 
             {/* Input */}

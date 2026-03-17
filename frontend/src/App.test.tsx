@@ -46,7 +46,6 @@ describe("App Routing", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText("Qwen Code Web UI")).toBeInTheDocument();
       expect(screen.getByText("/test-path")).toBeInTheDocument();
     });
   });

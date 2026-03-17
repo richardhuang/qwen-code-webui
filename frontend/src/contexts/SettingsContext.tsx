@@ -53,6 +53,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     });
   }, [settings.enterBehavior, updateSettings]);
 
+  const toggleExpandThinking = useCallback(() => {
+    updateSettings({
+      expandThinking: !settings.expandThinking,
+    });
+  }, [settings.expandThinking, updateSettings]);
+
   // Get experimental features with defaults
   const experimental: ExperimentalFeatures = useMemo(
     () => ({
@@ -68,11 +74,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       theme: settings.theme,
       enterBehavior: settings.enterBehavior,
       experimental,
+      expandThinking: settings.expandThinking ?? false,
       toggleTheme,
       toggleEnterBehavior,
+      toggleExpandThinking,
       updateSettings,
     }),
-    [settings, experimental, toggleTheme, toggleEnterBehavior, updateSettings],
+    [settings, experimental, toggleTheme, toggleEnterBehavior, toggleExpandThinking, updateSettings],
   );
 
   return (

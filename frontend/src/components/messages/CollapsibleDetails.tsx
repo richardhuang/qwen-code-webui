@@ -16,6 +16,8 @@ interface CollapsibleDetailsProps {
   icon?: React.ReactNode;
   badge?: string;
   defaultExpanded?: boolean;
+  /** When true, forces expanded state regardless of defaultExpanded */
+  forceExpanded?: boolean;
   maxPreviewLines?: number;
   showPreview?: boolean;
   previewContent?: string;
@@ -31,6 +33,7 @@ export function CollapsibleDetails({
   icon,
   badge,
   defaultExpanded = false,
+  forceExpanded,
   maxPreviewLines = 5,
   showPreview = true,
   previewContent,
@@ -39,7 +42,10 @@ export function CollapsibleDetails({
 }: CollapsibleDetailsProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const hasDetails = details.trim().length > 0;
-  const isCollapsible = hasDetails && !defaultExpanded;
+  // When forceExpanded is true, always show expanded; otherwise use local state
+  const effectiveExpanded = forceExpanded === true ? true : isExpanded;
+  // When forceExpanded is true, disable collapse functionality
+  const isCollapsible = hasDetails && !defaultExpanded && forceExpanded !== true;
 
   const contentPreview = React.useMemo(() => {
     const computedTotalLines = details.split("\n").length;
@@ -65,10 +71,10 @@ export function CollapsibleDetails({
   }, [details, maxPreviewLines, previewContent, showPreview]);
 
   const shouldShowPreview =
-    showPreview && !isExpanded && hasDetails && contentPreview.hasMore;
+    showPreview && !effectiveExpanded && hasDetails && contentPreview.hasMore;
 
   // Compact mode: show minimal header when collapsed
-  const isCompactCollapsed = compact && !isExpanded;
+  const isCompactCollapsed = compact && !effectiveExpanded;
 
   return (
     <div
@@ -106,7 +112,7 @@ export function CollapsibleDetails({
           <span className="opacity-60 text-xs ml-2">{previewSummary}</span>
         )}
         {isCollapsible && (
-          <span className="ml-1 opacity-80">{isExpanded ? "▼" : "▶"}</span>
+          <span className="ml-1 opacity-80">{effectiveExpanded ? "▼" : "▶"}</span>
         )}
       </div>
       {shouldShowPreview && (
@@ -129,7 +135,7 @@ export function CollapsibleDetails({
           </div>
         </div>
       )}
-      {hasDetails && isExpanded && (
+      {hasDetails && effectiveExpanded && (
         <pre
           className={`whitespace-pre-wrap ${colorScheme.content} text-xs font-mono leading-relaxed mt-2 pl-6 border-l-2 ${colorScheme.border}`}
         >

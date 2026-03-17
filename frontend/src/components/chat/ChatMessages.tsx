@@ -21,9 +21,10 @@ import {
 interface ChatMessagesProps {
   messages: AllMessage[];
   isLoading: boolean;
+  expandThinking?: boolean;
 }
 
-export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
+export function ChatMessages({ messages, isLoading, expandThinking }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -67,11 +68,11 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
     }
 
     if (isToolResultMessage(message)) {
-      return <ToolResultMessageComponent key={key} message={message} />;
+      return <ToolResultMessageComponent key={key} message={message} forceExpanded={expandThinking} />;
     } else if (isPlanMessage(message)) {
       return <PlanMessageComponent key={key} message={message} />;
     } else if (isThinkingMessage(message)) {
-      return <ThinkingMessageComponent key={key} message={message} />;
+      return <ThinkingMessageComponent key={key} message={message} forceExpanded={expandThinking} />;
     } else if (isTodoMessage(message)) {
       return <TodoMessageComponent key={key} message={message} />;
     } else if (isChatMessage(message)) {

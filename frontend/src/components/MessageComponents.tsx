@@ -171,10 +171,12 @@ export function ToolMessageComponent({ message }: ToolMessageComponentProps) {
 
 interface ToolResultMessageComponentProps {
   message: ToolResultMessage;
+  forceExpanded?: boolean;
 }
 
 export function ToolResultMessageComponent({
   message,
+  forceExpanded,
 }: ToolResultMessageComponentProps) {
   const toolUseResult = message.toolUseResult;
 
@@ -244,6 +246,7 @@ export function ToolResultMessageComponent({
       maxPreviewLines={maxPreviewLines}
       showPreview={shouldShowPreview}
       defaultExpanded={defaultExpanded}
+      forceExpanded={forceExpanded}
     />
   );
 }
@@ -287,10 +290,12 @@ export function PlanMessageComponent({ message }: PlanMessageComponentProps) {
 
 interface ThinkingMessageComponentProps {
   message: ThinkingMessage;
+  forceExpanded?: boolean;
 }
 
 export function ThinkingMessageComponent({
   message,
+  forceExpanded,
 }: ThinkingMessageComponentProps) {
   return (
     <CollapsibleDetails
@@ -305,6 +310,7 @@ export function ThinkingMessageComponent({
         bg: "bg-purple-50/60 dark:bg-purple-900/15 border border-purple-200 dark:border-purple-800",
       }}
       defaultExpanded={true}
+      forceExpanded={forceExpanded}
     />
   );
 }

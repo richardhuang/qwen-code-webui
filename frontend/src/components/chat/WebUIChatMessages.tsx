@@ -27,6 +27,7 @@ import { ThinkingMessageComponent } from "../MessageComponents";
 interface WebUIChatMessagesProps {
   messages: AllMessage[];
   isLoading: boolean;
+  expandThinking?: boolean;
   className?: string;
 }
 
@@ -39,6 +40,7 @@ interface WebUIChatMessagesProps {
 export function WebUIChatMessages({
   messages,
   isLoading,
+  expandThinking,
   className,
 }: WebUIChatMessagesProps) {
   const chatViewerRef = useRef<ChatViewerHandle>(null);
@@ -118,6 +120,7 @@ export function WebUIChatMessages({
                   : "",
               timestamp: new Date(msg.timestamp).getTime(),
             }}
+            forceExpanded={expandThinking}
           />
         );
 

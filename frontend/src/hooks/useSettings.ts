@@ -21,5 +21,10 @@ export function useEnterBehavior() {
   return { enterBehavior, toggleEnterBehavior };
 }
 
+export function useExpandThinking() {
+  const { expandThinking, toggleExpandThinking } = useSettings();
+  return { expandThinking, toggleExpandThinking };
+}
+
 // Re-export types for convenience
 export type { Theme, EnterBehavior } from "../types/settings";

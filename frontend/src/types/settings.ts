@@ -15,6 +15,8 @@ export interface AppSettings {
   version: number;
   /** Experimental features (optional, defaults applied if missing) */
   experimental?: ExperimentalFeatures;
+  /** Whether thinking/tool details should be expanded by default */
+  expandThinking?: boolean;
 }
 
 export interface LegacySettings {
@@ -28,8 +30,10 @@ export interface SettingsContextType {
   theme: Theme;
   enterBehavior: EnterBehavior;
   experimental: ExperimentalFeatures;
+  expandThinking: boolean;
   toggleTheme: () => void;
   toggleEnterBehavior: () => void;
+  toggleExpandThinking: () => void;
   updateSettings: (updates: Partial<AppSettings>) => void;
 }
 
