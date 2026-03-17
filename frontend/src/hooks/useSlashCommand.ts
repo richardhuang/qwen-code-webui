@@ -56,13 +56,25 @@ export function useSlashCommand(
         const textarea = inputRef.current;
         const rect = textarea.getBoundingClientRect();
         const charWidth = 8.5;
-        const top = rect.bottom - 8;
+        
+        // Calculate horizontal position
         const left = rect.left + Math.min((subCommandMatch[0].length) * charWidth, rect.width - 200);
+        
+        // Calculate vertical position with smart dropdown direction
+        const dropdownHeight = 240; // Max height of dropdown (max-h-60 = 15rem = 240px)
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        
+        // Prefer dropdown below, but switch to above if not enough space
+        const openAbove = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
+        const top = openAbove 
+          ? rect.top + window.scrollY - dropdownHeight - 8 // 8px gap above
+          : rect.bottom + window.scrollY + 8; // 8px gap below
 
         setState((prev) => ({
           ...prev,
           position: {
-            top: top + window.scrollY,
+            top: top,
             left: left + window.scrollX,
           },
         }));
@@ -94,13 +106,25 @@ export function useSlashCommand(
         const currentLineIndex = linesBeforeCursor.length - 1;
         const currentColumn = linesBeforeCursor[currentLineIndex].length;
         const charWidth = 8.5;
-        const top = rect.bottom - 8;
+        
+        // Calculate horizontal position
         const left = rect.left + Math.min(currentColumn * charWidth, rect.width - 200);
+        
+        // Calculate vertical position with smart dropdown direction
+        const dropdownHeight = 240; // Max height of dropdown (max-h-60 = 15rem = 240px)
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        
+        // Prefer dropdown below, but switch to above if not enough space
+        const openAbove = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
+        const top = openAbove 
+          ? rect.top + window.scrollY - dropdownHeight - 8 // 8px gap above
+          : rect.bottom + window.scrollY + 8; // 8px gap below
 
         setState((prev) => ({
           ...prev,
           position: {
-            top: top + window.scrollY,
+            top: top,
             left: left + window.scrollX,
           },
         }));
