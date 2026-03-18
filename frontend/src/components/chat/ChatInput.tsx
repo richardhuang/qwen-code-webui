@@ -70,7 +70,6 @@ export function ChatInput({
 }: ChatInputProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [isComposing, setIsComposing] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
   const { enterBehavior } = useEnterBehavior();
   const {
     addToHistory,
@@ -91,11 +90,11 @@ export function ChatInput({
     cancelSuggestions: cancelSlashSuggestions,
     completeWithTab,
     isSubCommand,
+    expandedHeight,
   } = useSlashCommand(
     inputRef as React.RefObject<HTMLTextAreaElement>,
     input,
     onInputChange,
-    isExpanded,
   );
 
   // Focus input when not loading and not in permission mode
@@ -124,8 +123,6 @@ export function ChatInput({
     if (input.trim()) {
       addToHistory(input);
     }
-    // Collapse input on submit
-    setIsExpanded(false);
     onSubmit();
   };
 
@@ -172,11 +169,6 @@ export function ChatInput({
         cancelSlashSuggestions();
         return;
       }
-    }
-
-    // Expand input when slash command is active (on any key that shows suggestions)
-    if (isSlashActive && !isExpanded) {
-      setIsExpanded(true);
     }
 
     // History navigation with up/down arrows (only when input is focused and slash command not active)
@@ -337,7 +329,8 @@ export function ChatInput({
             isLoading && currentRequestId ? "Processing..." : "Type message..."
           }
           rows={1}
-          className={`w-full px-4 py-3 pr-20 bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 backdrop-blur-sm shadow-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 resize-none overflow-hidden min-h-[48px] max-h-[${UI_CONSTANTS.TEXTAREA_MAX_HEIGHT}px] ${isSlashActive ? "mb-2" : ""}`}
+          style={{ marginBottom: isSlashActive ? `${expandedHeight}px` : '0' }}
+          className={`w-full px-4 py-3 pr-20 bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 backdrop-blur-sm shadow-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 resize-none overflow-hidden min-h-[48px] max-h-[${UI_CONSTANTS.TEXTAREA_MAX_HEIGHT}px]`}
           disabled={isLoading}
         />
         {/* Slash command suggestion popup */}
@@ -352,7 +345,10 @@ export function ChatInput({
             isSubCommand={isSubCommand}
           />
         )}
-        <div className="absolute right-2 bottom-3 flex gap-2">
+        <div 
+          className="absolute right-2 flex gap-2 transition-all duration-200"
+          style={{ bottom: isSlashActive ? `${expandedHeight + 12}px` : '12px' }}
+        >
           {isLoading && currentRequestId && (
             <button
               type="button"

@@ -11,13 +11,13 @@ interface SlashCommandState {
   position: { top: number; left: number } | null;
   isSubCommand: boolean;
   parentCommand: string | null;
+  expandedHeight: number;
 }
 
 export function useSlashCommand(
   inputRef: RefObject<HTMLTextAreaElement>,
   input: string,
   onInputChange: (value: string) => void,
-  isExpanded: boolean = false,
   onExecuteCommand?: (command: SlashCommand | SubCommand, isSubCommand: boolean) => void,
 ) {
   const [state, setState] = useState<SlashCommandState>({
@@ -28,6 +28,7 @@ export function useSlashCommand(
     position: null,
     isSubCommand: false,
     parentCommand: null,
+    expandedHeight: 0,
   });
 
   // Check for slash command trigger
@@ -42,7 +43,11 @@ export function useSlashCommand(
       const subQuery = subCommandMatch[1];
       const subCommands = getSubCommands("/skills");
       const filtered = searchSubCommands(subCommands, subQuery);
-      
+
+      // Calculate expanded height: each item is ~48px, plus small buffer
+      const itemHeight = 48;
+      const expandedHeight = filtered.length * itemHeight + 16;
+
       setState((prev) => ({
         ...prev,
         isActive: true,
@@ -51,6 +56,7 @@ export function useSlashCommand(
         selectedIndex: 0,
         isSubCommand: true,
         parentCommand: "/skills",
+        expandedHeight,
       }));
 
       if (inputRef.current) {
@@ -61,10 +67,9 @@ export function useSlashCommand(
         // Calculate horizontal position
         const left = rect.left + Math.min((subCommandMatch[0].length) * charWidth, rect.width - 200);
 
-        // Always position dropdown below the input
-        // Add extra gap when input is expanded to give more space
-        const gap = isExpanded ? 8 : 2;
-        const top = rect.bottom + window.scrollY + gap;
+        // Always position dropdown below the input at the bottom of expanded area
+        const gap = 4;
+        const top = rect.bottom + window.scrollY + expandedHeight + gap;
 
         setState((prev) => ({
           ...prev,
@@ -82,6 +87,11 @@ export function useSlashCommand(
     if (slashMatch) {
       const query = slashMatch[0];
       const suggestions = searchSlashCommands(query.slice(1));
+
+      // Calculate expanded height: each item is ~48px, plus small buffer
+      const itemHeight = 48;
+      const expandedHeight = suggestions.length * itemHeight + 16;
+
       setState((prev) => ({
         ...prev,
         isActive: true,
@@ -90,6 +100,7 @@ export function useSlashCommand(
         selectedIndex: 0,
         isSubCommand: false,
         parentCommand: null,
+        expandedHeight,
       }));
 
       if (inputRef.current) {
@@ -105,10 +116,9 @@ export function useSlashCommand(
         // Calculate horizontal position
         const left = rect.left + Math.min(currentColumn * charWidth, rect.width - 200);
 
-        // Always position dropdown below the input
-        // Add extra gap when input is expanded to give more space
-        const gap = isExpanded ? 8 : 2;
-        const top = rect.bottom + window.scrollY + gap;
+        // Always position dropdown below the input at the bottom of expanded area
+        const gap = 4;
+        const top = rect.bottom + window.scrollY + expandedHeight + gap;
 
         setState((prev) => ({
           ...prev,
@@ -128,6 +138,7 @@ export function useSlashCommand(
         position: null,
         isSubCommand: false,
         parentCommand: null,
+        expandedHeight: 0,
       }));
     }
   }, [input, inputRef]);
@@ -224,6 +235,9 @@ export function useSlashCommand(
         suggestions: [],
         selectedIndex: 0,
         position: null,
+        isSubCommand: false,
+        parentCommand: null,
+        expandedHeight: 0,
       }));
 
       onExecuteCommand?.(command, state.isSubCommand);
@@ -267,6 +281,9 @@ export function useSlashCommand(
       suggestions: [],
       selectedIndex: 0,
       position: null,
+      isSubCommand: false,
+      parentCommand: null,
+      expandedHeight: 0,
     }));
   }, []);
 
@@ -276,6 +293,7 @@ export function useSlashCommand(
     selectedIndex: state.selectedIndex,
     position: state.position,
     isSubCommand: state.isSubCommand,
+    expandedHeight: state.expandedHeight,
     navigateUp,
     navigateDown,
     confirmSelection,
