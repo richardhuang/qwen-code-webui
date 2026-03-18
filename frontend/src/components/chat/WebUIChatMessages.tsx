@@ -15,14 +15,11 @@ import {
 } from "@qwen-code/webui";
 import "@qwen-code/webui/styles.css";
 import type { AllMessage } from "../../types";
+import type { ExtendedMessage } from "../../adapters";
 import {
   adaptMessagesToWebUI,
   filterEmptyMessages,
-  isPlanMessage,
-  type ExtendedMessage,
 } from "../../adapters";
-import { PlanMessageComponent } from "../MessageComponents";
-import { ThinkingMessageComponent } from "../MessageComponents";
 
 interface WebUIChatMessagesProps {
   messages: AllMessage[];
@@ -49,32 +46,12 @@ export function WebUIChatMessages({
     return filterEmptyMessages(adapted);
   }, [messages]);
 
-  // Separate extended messages that need custom rendering
-  // Note: Todo messages are handled by ChatViewer using UpdatedPlanToolCall
-  // Note: System messages (init, result, error) are hidden - not useful for users
-  const { standardMessages, extendedMessages } = useMemo(() => {
-    const standard: ChatMessageData[] = [];
-    const extended: Array<{ message: ExtendedMessage; index: number }> = [];
-
-    adaptedMessages.forEach((msg, index) => {
-      // Check if this message needs custom rendering
-      // Todo messages are now handled by ChatViewer using UpdatedPlanToolCall
-      // System messages (system, result, error) are skipped
-      if (isPlanMessage(msg) || msg.extendedType === "thinking") {
-        extended.push({ message: msg, index });
-      } else if (
-        msg.extendedType === "system" ||
-        msg.extendedType === "result" ||
-        msg.extendedType === "error"
-      ) {
-        // Skip system messages - not useful for users
-        return;
-      } else {
-        standard.push(msg);
-      }
+  // Filter out system messages (init, result, error) - not useful for users
+  const standardMessages = useMemo(() => {
+    return adaptedMessages.filter(msg => {
+      const extType = (msg as ExtendedMessage).extendedType;
+      return extType !== "system" && extType !== "result" && extType !== "error";
     });
-
-    return { standardMessages: standard, extendedMessages: extended };
   }, [adaptedMessages]);
 
   // Auto-scroll to bottom when messages change
@@ -84,90 +61,8 @@ export function WebUIChatMessages({
     }
   }, [messages]);
 
-  // Render extended messages (plan, system, etc.)
-  // Note: Todo messages are handled by ChatViewer using UpdatedPlanToolCall
-  const renderExtendedMessage = (
-    item: { message: ExtendedMessage; index: number },
-  ) => {
-    const { message: msg, index } = item;
-    const key = `${msg.uuid}-${index}`;
-
-    switch (msg.extendedType) {
-      case "plan":
-        return (
-          <PlanMessageComponent
-            key={key}
-            message={{
-              type: "plan",
-              plan: msg.data?.plan || "",
-              toolUseId: "",
-              timestamp: new Date(msg.timestamp).getTime(),
-            }}
-          />
-        );
-
-      case "thinking":
-        return (
-          <ThinkingMessageComponent
-            key={key}
-            message={{
-              type: "thinking",
-              content:
-                typeof msg.message?.content === "string"
-                  ? msg.message.content
-                  : "",
-              timestamp: new Date(msg.timestamp).getTime(),
-            }}
-            forceExpanded={expandThinking}
-          />
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  // If we have extended messages, use hybrid rendering
-  if (extendedMessages.length > 0) {
-    return (
-      <div
-        className={`flex-1 overflow-y-auto bg-white/70 dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60 p-3 sm:p-6 mb-3 sm:mb-6 rounded-2xl shadow-sm backdrop-blur-sm flex flex-col ${className || ""}`}
-      >
-        {messages.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <>
-            <div className="flex-1" aria-hidden="true" />
-
-            {/* Render messages in order, interleaving standard and extended messages */}
-            {adaptedMessages.map((msg, index) => {
-              // Check if this is an extended message
-              const extendedMsg = extendedMessages.find(e => e.index === index);
-              if (extendedMsg) {
-                return renderExtendedMessage(extendedMsg);
-              }
-              // Otherwise render with ChatViewer (standard messages)
-              const standardMsg = standardMessages.find(s => s.uuid === msg.uuid);
-              if (standardMsg) {
-                return (
-                  <ChatViewer
-                    key={msg.uuid}
-                    messages={[standardMsg]}
-                    className="webui-chat-viewer"
-                    emptyMessage=""
-                    autoScroll={true}
-                  />
-                );
-              }
-              return null;
-            })}
-          </>
-        )}
-      </div>
-    );
-  }
-
-  // Use pure ChatViewer for standard messages
+  // Use pure ChatViewer for all messages
+  // Thinking messages are rendered by ChatViewer with native collapse/expand support
   return (
     <div
       className={`flex-1 overflow-y-auto bg-white/70 dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60 p-3 sm:p-6 mb-3 sm:mb-6 rounded-2xl shadow-sm backdrop-blur-sm flex flex-col ${className || ""}`}
