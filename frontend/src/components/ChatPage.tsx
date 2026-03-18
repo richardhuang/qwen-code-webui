@@ -20,6 +20,7 @@ import { SettingsModal } from "./SettingsModal";
 import { HistoryButton } from "./chat/HistoryButton";
 import { ProjectSwitchButton } from "./chat/ProjectSwitchButton";
 import { ExpandThinkingButton } from "./chat/ExpandThinkingButton";
+import { ToggleWebUIComponentsButton } from "./chat/ToggleWebUIComponentsButton";
 import { ChatInput } from "./chat/ChatInput";
 import { ChatMessages } from "./chat/ChatMessages";
 import { WebUIChatMessages } from "./chat/WebUIChatMessages";
@@ -483,6 +484,9 @@ export function ChatPage() {
           </div>
           <div className="flex items-center gap-2">
             <ProjectSwitchButton onClick={handleBackToProjects} />
+            {!isHistoryView && (
+              <ToggleWebUIComponentsButton />
+            )}
             {!isHistoryView && (
               <ExpandThinkingButton
                 isExpanded={expandThinking}
