@@ -42,21 +42,33 @@ export function CollapsibleDetails({
 }: CollapsibleDetailsProps) {
   const hasDetails = details.trim().length > 0;
 
-  // Local state for user-initiated expand/collapse when forceExpanded is not provided
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-  
-  // When forceExpanded is provided, use it; otherwise use local state
-  const effectiveExpanded = forceExpanded !== undefined ? forceExpanded : isExpanded;
+  // When forceExpanded is provided, use it directly; otherwise use local state
+  // Don't use local state when forceExpanded is provided to avoid sync issues
+  // When forceExpanded is provided, user can still click to toggle (local override)
+  const [localOverride, setLocalOverride] = React.useState<boolean | undefined>(undefined);
+  const effectiveExpanded = forceExpanded !== undefined 
+    ? (localOverride !== undefined ? localOverride : forceExpanded)
+    : defaultExpanded;
 
   // Always allow collapsing/expanding via click when there are details
   const isCollapsible = hasDetails;
 
-  // Sync local state with forceExpanded prop changes to ensure internal state matches
+  // Reset local override when forceExpanded changes
   React.useEffect(() => {
-    if (forceExpanded !== undefined && isExpanded !== forceExpanded) {
-      setIsExpanded(forceExpanded);
+    if (forceExpanded !== undefined) {
+      setLocalOverride(undefined);
     }
-  }, [forceExpanded, isExpanded]);
+  }, [forceExpanded]);
+
+  const handleToggle = () => {
+    if (forceExpanded !== undefined) {
+      // When forceExpanded is controlled, use local override
+      setLocalOverride(!forceExpanded);
+    } else {
+      // Otherwise just toggle (handled by parent or default behavior)
+      // This case shouldn't happen in normal usage since isCollapsible requires hasDetails
+    }
+  };
 
   const contentPreview = React.useMemo(() => {
     const computedTotalLines = details.split("\n").length;
@@ -99,14 +111,14 @@ export function CollapsibleDetails({
         className={`${colorScheme.header} text-xs font-medium flex items-center gap-2 ${isCollapsible ? "cursor-pointer hover:opacity-80" : ""} ${!isCompactCollapsed ? "mb-1" : ""}`}
         role={isCollapsible ? "button" : undefined}
         tabIndex={isCollapsible ? 0 : undefined}
-        aria-expanded={isCollapsible ? isExpanded : undefined}
-        onClick={isCollapsible ? () => setIsExpanded(!isExpanded) : undefined}
+        aria-expanded={isCollapsible ? effectiveExpanded : undefined}
+        onClick={isCollapsible ? handleToggle : undefined}
         onKeyDown={
           isCollapsible
             ? (e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  setIsExpanded(!isExpanded);
+                  handleToggle();
                 }
               }
             : undefined
