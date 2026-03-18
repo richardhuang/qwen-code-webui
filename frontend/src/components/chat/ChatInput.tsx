@@ -347,7 +347,7 @@ export function ChatInput({
         )}
         <div
           className="absolute right-2 flex gap-2 transition-all duration-200"
-          style={{ bottom: isSlashActive ? `${expandedHeight - 12}px` : '12px' }}
+          style={{ bottom: isSlashActive ? `${expandedHeight + 12}px` : '12px' }}
         >
           {isLoading && currentRequestId && (
             <button

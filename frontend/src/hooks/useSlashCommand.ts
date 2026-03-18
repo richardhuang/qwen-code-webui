@@ -67,7 +67,8 @@ export function useSlashCommand(
         // subCommandMatch[0] = "/skills xxx", subCommandMatch[1] = "xxx"
         // Position should align with the start of "xxx"
         const prefixLength = subCommandMatch[0].length - subQuery.length; // Length of "/skills "
-        const left = rect.left + prefixLength * charWidth;
+        // Subtract 2 char widths to align dropdown left edge with skill name first letter
+        const left = rect.left + prefixLength * charWidth - (2 * charWidth);
 
         // Position dropdown directly below input (within the expanded margin area)
         const gap = 2; // Minimal gap to be close to input
