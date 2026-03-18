@@ -12,6 +12,7 @@ function mapPermissionMode(mode?: string): PermissionMode | undefined {
   if (mode === "acceptEdits") {
     return "auto-edit";
   }
+  // All other modes (default, plan, auto-edit, yolo) are passed through
   return mode as PermissionMode;
 }
 
@@ -51,6 +52,13 @@ async function* executeQwenCommand(
     abortController = new AbortController();
     requestAbortControllers.set(requestId, abortController);
 
+    // Log permission mode for debugging
+    const mappedPermissionMode = permissionMode ? mapPermissionMode(permissionMode) : undefined;
+    logger.chat.debug(
+      "Executing Qwen query with permissionMode: {permissionMode} (mapped: {mappedPermissionMode})",
+      { permissionMode, mappedPermissionMode },
+    );
+
     for await (const sdkMessage of query({
       prompt: processedMessage,
       options: {
@@ -59,9 +67,7 @@ async function* executeQwenCommand(
         ...(sessionId ? { resume: sessionId } : {}),
         ...(allowedTools ? { allowedTools } : {}),
         ...(workingDirectory ? { cwd: workingDirectory } : {}),
-        ...(permissionMode
-          ? { permissionMode: mapPermissionMode(permissionMode) }
-          : {}),
+        ...(mappedPermissionMode ? { permissionMode: mappedPermissionMode } : {}),
       },
     })) {
       // Debug logging of raw SDK messages with detailed content
@@ -111,6 +117,10 @@ export async function handleChatRequest(
   logger.chat.debug(
     "Received chat request {*}",
     chatRequest as unknown as Record<string, unknown>,
+  );
+  logger.chat.debug(
+    "Chat request permissionMode: {permissionMode}",
+    { permissionMode: chatRequest.permissionMode },
   );
 
   const stream = new ReadableStream({
