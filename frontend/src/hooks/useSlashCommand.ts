@@ -63,11 +63,14 @@ export function useSlashCommand(
         const rect = textarea.getBoundingClientRect();
         const charWidth = 8.5;
 
-        // Calculate horizontal position
-        const left = rect.left + Math.min((subCommandMatch[0].length) * charWidth, rect.width - 200);
+        // Calculate horizontal position: align with the first letter of the skill name
+        // subCommandMatch[0] = "/skills xxx", subCommandMatch[1] = "xxx"
+        // Position should align with the start of "xxx"
+        const prefixLength = subCommandMatch[0].length - subQuery.length; // Length of "/skills "
+        const left = rect.left + prefixLength * charWidth;
 
         // Always position dropdown below the input at the bottom of expanded area
-        const gap = 4;
+        const gap = 2; // Minimal gap to be close to input
         const top = rect.bottom + window.scrollY + expandedHeight + gap;
 
         setState((prev) => ({
@@ -104,18 +107,14 @@ export function useSlashCommand(
       if (inputRef.current) {
         const textarea = inputRef.current;
         const rect = textarea.getBoundingClientRect();
-        const cursorPosition = textarea.selectionStart || 0;
-        const textBeforeCursor = text.substring(0, cursorPosition);
-        const linesBeforeCursor = textBeforeCursor.split("\n");
-        const currentLineIndex = linesBeforeCursor.length - 1;
-        const currentColumn = linesBeforeCursor[currentLineIndex].length;
         const charWidth = 8.5;
 
-        // Calculate horizontal position
-        const left = rect.left + Math.min(currentColumn * charWidth, rect.width - 200);
+        // Calculate horizontal position: align with the "/" character
+        // slashMatch.index is the position of "/" in the last line
+        const left = rect.left + (slashMatch.index ?? 0) * charWidth;
 
         // Always position dropdown below the input at the bottom of expanded area
-        const gap = 4;
+        const gap = 2; // Minimal gap to be close to input
         const top = rect.bottom + window.scrollY + expandedHeight + gap;
 
         setState((prev) => ({
