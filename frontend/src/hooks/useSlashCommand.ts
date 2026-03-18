@@ -17,6 +17,7 @@ export function useSlashCommand(
   inputRef: RefObject<HTMLTextAreaElement>,
   input: string,
   onInputChange: (value: string) => void,
+  isExpanded: boolean = false,
   onExecuteCommand?: (command: SlashCommand | SubCommand, isSubCommand: boolean) => void,
 ) {
   const [state, setState] = useState<SlashCommandState>({
@@ -60,17 +61,10 @@ export function useSlashCommand(
         // Calculate horizontal position
         const left = rect.left + Math.min((subCommandMatch[0].length) * charWidth, rect.width - 200);
 
-        // Calculate vertical position with smart dropdown direction
-        const dropdownHeight = 240; // Max height of dropdown (max-h-60 = 15rem = 240px)
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const spaceAbove = rect.top;
-
-        // Prefer dropdown below, but switch to above if not enough space
-        const openAbove = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
-        const gap = 2; // Minimal gap (2px) to make dropdown appear close to input
-        const top = openAbove
-          ? rect.top + window.scrollY - dropdownHeight - gap
-          : rect.bottom + window.scrollY + gap;
+        // Always position dropdown below the input
+        // Add extra gap when input is expanded to give more space
+        const gap = isExpanded ? 8 : 2;
+        const top = rect.bottom + window.scrollY + gap;
 
         setState((prev) => ({
           ...prev,
@@ -111,17 +105,10 @@ export function useSlashCommand(
         // Calculate horizontal position
         const left = rect.left + Math.min(currentColumn * charWidth, rect.width - 200);
 
-        // Calculate vertical position with smart dropdown direction
-        const dropdownHeight = 240; // Max height of dropdown (max-h-60 = 15rem = 240px)
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const spaceAbove = rect.top;
-
-        // Prefer dropdown below, but switch to above if not enough space
-        const openAbove = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
-        const gap = 2; // Minimal gap (2px) to make dropdown appear close to input
-        const top = openAbove
-          ? rect.top + window.scrollY - dropdownHeight - gap
-          : rect.bottom + window.scrollY + gap;
+        // Always position dropdown below the input
+        // Add extra gap when input is expanded to give more space
+        const gap = isExpanded ? 8 : 2;
+        const top = rect.bottom + window.scrollY + gap;
 
         setState((prev) => ({
           ...prev,
