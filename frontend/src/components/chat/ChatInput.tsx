@@ -147,8 +147,10 @@ export function ChatInput({
       }
       if (e.key === KEYBOARD_SHORTCUTS.SUBMIT) {
         e.preventDefault();
-        confirmSlashSelection();
-        return;
+        // Use completeWithTab for consistent behavior with Tab key
+        if (completeWithTab()) {
+          return;
+        }
       }
       if (e.key === "Escape") {
         e.preventDefault();
