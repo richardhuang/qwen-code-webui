@@ -9,6 +9,15 @@ interface SettingsJson {
 }
 
 /**
+ * Remove [Bailian Coding Plan] prefix from model name for display
+ * @param fullName - Full model name
+ * @returns Model name without prefix
+ */
+function cleanModelName(fullName: string): string {
+  return fullName.replace(/^\[Bailian Coding Plan\]\s*/, "");
+}
+
+/**
  * Reads ~/.qwen/settings.json and returns available models
  * @param c - Hono context
  * @returns JSON response with models list
@@ -21,22 +30,28 @@ export async function handleModelsRequest(c: Context): Promise<Response> {
     }
 
     const settingsPath = `${homeDir}/.qwen/settings.json`;
-    
+
     try {
       const settingsContent = await Deno.readTextFile(settingsPath);
       const settings: SettingsJson = JSON.parse(settingsContent);
+
+      let models = settings.modelProviders?.openai || [];
       
-      const models = settings.modelProviders?.openai || [];
-      
-      logger.models.debug("Loaded {count} models from settings.json", { 
-        count: models.length 
+      // Clean model names for display
+      models = models.map(model => ({
+        ...model,
+        name: cleanModelName(model.name)
+      }));
+
+      logger.models.debug("Loaded {count} models from settings.json", {
+        count: models.length
       });
-      
+
       return c.json<ModelsResponse>({ models }, 200);
     } catch (fileError) {
       // File doesn't exist or can't be read
-      logger.models.debug("Could not read settings.json: {error}", { 
-        error: fileError 
+      logger.models.debug("Could not read settings.json: {error}", {
+        error: fileError
       });
       return c.json<ModelsResponse>({ models: [] }, 200);
     }

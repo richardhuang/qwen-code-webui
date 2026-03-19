@@ -29,7 +29,7 @@ async function main(runtime: DenoRuntime) {
 
   // Create application
   const __dirname = dirname(fromFileUrl(import.meta.url));
-  const staticPath = join(__dirname, "../dist/static");
+  const staticPath = join(__dirname, "../dist");
 
   const app = createApp(runtime, {
     debugMode: args.debug,

@@ -18,9 +18,15 @@ export function ModelSelector({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Find selected model name
-  const selectedModelName = models.find((m) => m.id === selectedModel)?.name || 
-    (loading ? "Loading..." : "Select model");
+  // Remove [Bailian Coding Plan] prefix from model name for display
+  const cleanModelName = (fullName: string): string => {
+    return fullName.replace(/^\[Bailian Coding Plan\]\s*/, "");
+  };
+
+  // Find selected model name (without prefix)
+  const selectedModelName = models.find((m) => m.id === selectedModel)
+    ? cleanModelName(models.find((m) => m.id === selectedModel)!.name)
+    : (loading ? "Loading..." : "Select model");
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -85,13 +91,13 @@ export function ModelSelector({
                 }}
                 className={
                   isSelected
-                    ? "w-full text-left px-3 py-2 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
+                    ? "w-full text-left px-3 py-2 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 model-option-hover transition-colors"
                     : "w-full text-left px-3 py-2 text-xs text-slate-700 dark:text-slate-300 model-option-hover transition-colors cursor-pointer"
                 }
                 role="option"
                 aria-selected={isSelected}
               >
-                <div className="font-medium truncate">{model.name}</div>
+                <div className="font-medium truncate">{cleanModelName(model.name)}</div>
                 {model.id !== model.name && (
                   <div className="text-slate-500 dark:text-slate-400 text-[10px] truncate">
                     {model.id}
