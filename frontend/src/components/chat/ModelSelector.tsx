@@ -70,7 +70,7 @@ export function ModelSelector({
 
       {isOpen && (
         <div
-          className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto"
+          className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto scrollbar-thin"
           role="listbox"
         >
           {models.map((model) => (
@@ -81,10 +81,10 @@ export function ModelSelector({
                 onSelectModel(model.id);
                 setIsOpen(false);
               }}
-              className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ${
+              className={`w-full text-left px-3 py-2 text-xs transition-colors ${
                 model.id === selectedModel
                   ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                  : "text-slate-700 dark:text-slate-300"
+                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
               }`}
               role="option"
               aria-selected={model.id === selectedModel}
