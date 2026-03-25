@@ -1,7 +1,25 @@
 export interface StreamResponse {
-  type: "claude_json" | "error" | "done" | "aborted";
+  type: "claude_json" | "error" | "done" | "aborted" | "control_request";
   data?: unknown; // SDKMessage object for claude_json type (Qwen SDK message)
   error?: string;
+  controlRequest?: ControlRequestData;
+}
+
+// Control request types for tool approval
+export interface ControlRequestData {
+  requestId: string;
+  sessionId: string;
+  toolName: string;
+  toolInput?: Record<string, unknown>;
+  reason?: string;
+  message?: string;
+}
+
+export interface ControlResponseRequest {
+  requestId: string;
+  sessionId: string;
+  approved: boolean;
+  reason?: string;
 }
 
 export interface ChatRequest {

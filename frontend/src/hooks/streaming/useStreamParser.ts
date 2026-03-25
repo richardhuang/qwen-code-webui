@@ -4,6 +4,7 @@ import type {
   SDKMessage,
   SystemMessage,
   AbortMessage,
+  ControlRequestDialog,
 } from "../../types";
 import {
   isSystemMessage,
@@ -17,6 +18,11 @@ import {
   UnifiedMessageProcessor,
   type ProcessingContext,
 } from "../../utils/UnifiedMessageProcessor";
+
+// Extended streaming context for control requests
+export interface ExtendedStreamingContext extends StreamingContext {
+  onControlRequest?: (request: ControlRequestDialog) => void;
+}
 
 export function useStreamParser() {
   // Create a single unified processor instance
@@ -110,6 +116,21 @@ export function useStreamParser() {
           // data.data is already an SDKMessage object, no need to parse
           const qwenData = data.data as SDKMessage;
           processQwenData(qwenData, context);
+        } else if (data.type === "control_request" && data.controlRequest) {
+          // Handle control request for tool approval
+          console.log("Control request received:", data.controlRequest);
+          const extendedContext = context as ExtendedStreamingContext;
+          if (extendedContext.onControlRequest) {
+            extendedContext.onControlRequest({
+              isOpen: true,
+              requestId: data.controlRequest.requestId,
+              sessionId: data.controlRequest.sessionId,
+              toolName: data.controlRequest.toolName,
+              toolInput: data.controlRequest.toolInput,
+              reason: data.controlRequest.reason,
+              message: data.controlRequest.message,
+            });
+          }
         } else if (data.type === "error") {
           const errorMessage: SystemMessage = {
             type: "error",

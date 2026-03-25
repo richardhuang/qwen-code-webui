@@ -16,6 +16,7 @@ import { useAutoHistoryLoader } from "../hooks/useHistoryLoader";
 import { useSettings } from "../hooks/useSettings";
 import { useExpandThinking } from "../hooks/useSettings";
 import { useModel } from "../hooks/useModel";
+import { useControlRequest } from "../hooks/chat/useControlRequest";
 import { SettingsButton } from "./SettingsButton";
 import { SettingsModal } from "./SettingsModal";
 import { HistoryButton } from "./chat/HistoryButton";
@@ -26,11 +27,13 @@ import { ModelSelector } from "./chat/ModelSelector";
 import { ChatInput } from "./chat/ChatInput";
 import { ChatMessages } from "./chat/ChatMessages";
 import { WebUIChatMessages } from "./chat/WebUIChatMessages";
+import { ControlRequestDialog } from "./chat/ControlRequestDialog";
 import { HistoryView } from "./HistoryView";
 import { getChatUrl, getProjectsUrl } from "../config/api";
 import { KEYBOARD_SHORTCUTS } from "../utils/constants";
 import { normalizeWindowsPath } from "../utils/pathUtils";
 import type { StreamingContext } from "../hooks/streaming/useMessageProcessor";
+import type { ExtendedStreamingContext } from "../hooks/streaming/useStreamParser";
 
 export function ChatPage() {
   const location = useLocation();
@@ -145,6 +148,15 @@ export function ChatPage() {
     onPermissionModeChange: setPermissionMode,
   });
 
+  // Control request state management
+  const {
+    controlRequestDialog,
+    showControlRequestDialog,
+    closeControlRequestDialog,
+    approveControlRequest,
+    rejectControlRequest,
+  } = useControlRequest();
+
   const handlePermissionError = useCallback(
     (toolName: string, patterns: string[], toolUseId: string) => {
       // Check if this is an ExitPlanMode permission error
@@ -229,6 +241,10 @@ export function ChatPage() {
             await createAbortHandler(requestId)();
           },
         };
+
+        // Add control request callback for ExtendedStreamingContext
+        (streamingContext as ExtendedStreamingContext).onControlRequest =
+          showControlRequestDialog;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -614,6 +630,20 @@ export function ChatPage() {
 
         {/* Settings Modal */}
         <SettingsModal isOpen={isSettingsOpen} onClose={handleSettingsClose} />
+
+        {/* Control Request Dialog */}
+        <ControlRequestDialog
+          request={controlRequestDialog}
+          onApprove={async () => {
+            // Use the hook's approve function
+            await approveControlRequest();
+          }}
+          onReject={async () => {
+            // Use the hook's reject function
+            await rejectControlRequest();
+          }}
+          onClose={closeControlRequestDialog}
+        />
       </div>
     </div>
   );

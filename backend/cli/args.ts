@@ -22,6 +22,9 @@ export function parseCliArgs(): ParsedArgs {
   // Get default port from environment
   const defaultPort = parseInt(getEnv("PORT") || "8080", 10);
 
+  // Get default host from environment
+  const defaultHost = getEnv("HOST") || "127.0.0.1";
+
   // Configure program
   program
     .name("qwen-code-webui")
@@ -42,7 +45,7 @@ export function parseCliArgs(): ParsedArgs {
     .option(
       "--host <host>",
       "Host address to bind to (use 0.0.0.0 for all interfaces)",
-      "127.0.0.1",
+      defaultHost,
     )
     .option(
       "--qwen-path <path>",

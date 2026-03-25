@@ -73,6 +73,17 @@ export interface PlanApprovalDialog {
   toolUseId: string;
 }
 
+// Control request dialog state for tool approval
+export interface ControlRequestDialog {
+  isOpen: boolean;
+  requestId: string;
+  sessionId: string;
+  toolName: string;
+  toolInput?: Record<string, unknown>;
+  reason?: string;
+  message?: string;
+}
+
 // Plan message type for UI display
 export interface PlanMessage {
   type: "plan";
@@ -189,11 +200,16 @@ export function fromSDKPermissionMode(
 export interface ChatStatePermissions {
   permissionMode: PermissionMode;
   planApprovalDialog: PlanApprovalDialog | null;
+  controlRequestDialog: ControlRequestDialog | null;
   setPermissionMode: (mode: PermissionMode) => void;
   showPlanApprovalDialog: (plan: string, toolUseId: string) => void;
   closePlanApprovalDialog: () => void;
   approvePlan: () => void;
   rejectPlan: () => void;
+  showControlRequestDialog: (request: ControlRequestDialog) => void;
+  closeControlRequestDialog: () => void;
+  approveControlRequest: () => void;
+  rejectControlRequest: () => void;
 }
 
 // Permission mode preference type

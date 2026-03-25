@@ -2,7 +2,7 @@ import { Context } from "hono";
 import type { ProjectInfo, ProjectsResponse } from "../../shared/types.ts";
 import { logger } from "../utils/logger.ts";
 import { readDir, stat } from "../utils/fs.ts";
-import { getHomeDir } from "../utils/os.ts";
+import { getHomeDir, getEnv } from "../utils/os.ts";
 import { decodeProjectPath } from "../utils/projectMapping.ts";
 
 /**
@@ -13,13 +13,24 @@ import { decodeProjectPath } from "../utils/projectMapping.ts";
  */
 export async function handleProjectsRequest(c: Context) {
   try {
-    const homeDir = getHomeDir();
-    if (!homeDir) {
-      return c.json({ error: "Home directory not found" }, 500);
-    }
+    // Check for QWEN_CONFIG_DIR environment variable first
+    // This allows running the service as root while using a different user's config
+    const qwenConfigDir = getEnv("QWEN_CONFIG_DIR");
+    let projectsDir: string;
 
-    // Qwen Code stores project histories in ~/.qwen/projects/
-    const projectsDir = `${homeDir}/.qwen/projects`;
+    if (qwenConfigDir) {
+      // Use QWEN_CONFIG_DIR if set
+      projectsDir = `${qwenConfigDir}/projects`;
+      logger.api.debug("Using QWEN_CONFIG_DIR: {qwenConfigDir}", { qwenConfigDir });
+    } else {
+      // Fallback to home directory
+      const homeDir = getHomeDir();
+      if (!homeDir) {
+        return c.json({ error: "Home directory not found" }, 500);
+      }
+      // Qwen Code stores project histories in ~/.qwen/projects/
+      projectsDir = `${homeDir}/.qwen/projects`;
+    }
 
     try {
       // Check if projects directory exists

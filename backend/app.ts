@@ -19,6 +19,10 @@ import { handleChatRequest } from "./handlers/chat.ts";
 import { handleAbortRequest } from "./handlers/abort.ts";
 import { handleVersionRequest } from "./handlers/version.ts";
 import { handleModelsRequest } from "./handlers/models.ts";
+import {
+  handleControlResponse,
+  handleControlCancel,
+} from "./handlers/control.ts";
 import { logger } from "./utils/logger.ts";
 import { readBinaryFile } from "./utils/fs.ts";
 
@@ -75,6 +79,10 @@ export function createApp(
   );
 
   app.post("/api/chat", (c) => handleChatRequest(c, requestAbortControllers));
+
+  // Control request/response endpoints for tool approval
+  app.post("/api/control/response", (c) => handleControlResponse(c));
+  app.post("/api/control/cancel", (c) => handleControlCancel(c));
 
   // Static file serving with SPA fallback
   // Serve static assets (CSS, JS, images, etc.)
