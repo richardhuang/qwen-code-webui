@@ -164,6 +164,11 @@ async function* executeQwenCommand(
         ...(mappedPermissionMode ? { permissionMode: mappedPermissionMode } : {}),
         ...(model ? { model } : {}),
         ...(canUseTool ? { canUseTool } : {}),
+        // Disable timeout for canUseTool callback - user should have unlimited time to respond
+        // Set to 100 years to effectively disable the timeout
+        timeout: {
+          canUseTool: 3153600000000, // 100 years - effectively no timeout for user permission response
+        },
       },
     })[Symbol.asyncIterator]();
 
