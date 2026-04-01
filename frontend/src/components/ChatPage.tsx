@@ -141,6 +141,8 @@ export function ChatPage() {
     showPlanModeRequest,
     closePlanModeRequest,
     updatePermissionMode,
+    recordDenial,
+    resetDenialCounter,
   } = usePermissions({
     onPermissionModeChange: setPermissionMode,
   });
@@ -290,6 +292,9 @@ export function ChatPage() {
   const handlePermissionAllow = useCallback(() => {
     if (!permissionRequest) return;
 
+    // Reset denial counter when user allows
+    resetDenialCounter();
+
     // Add all patterns temporarily
     let updatedAllowedTools = allowedTools;
     permissionRequest.patterns.forEach((pattern) => {
@@ -308,10 +313,14 @@ export function ChatPage() {
     allowedTools,
     allowToolTemporary,
     closePermissionRequest,
+    resetDenialCounter,
   ]);
 
   const handlePermissionAllowPermanent = useCallback(() => {
     if (!permissionRequest) return;
+
+    // Reset denial counter when user allows
+    resetDenialCounter();
 
     // Add all patterns permanently
     let updatedAllowedTools = allowedTools;
@@ -331,11 +340,40 @@ export function ChatPage() {
     allowedTools,
     allowToolPermanent,
     closePermissionRequest,
+    resetDenialCounter,
   ]);
 
   const handlePermissionDeny = useCallback(() => {
+    if (!permissionRequest) return;
+
+    const toolName = permissionRequest.toolName;
+
+    // Record denial and check for loop
+    const loopMessage = recordDenial(toolName);
+
     closePermissionRequest();
-  }, [closePermissionRequest]);
+
+    if (currentSessionId) {
+      if (loopMessage) {
+        // Loop detected - send interrupt message to stop AI from retrying
+        sendMessage(loopMessage, allowedTools, true);
+      } else {
+        // Normal denial - send a message to inform AI that user denied
+        sendMessage(
+          `The user denied the permission request for ${toolName}. Please stop retrying and ask the user what they would like to do instead.`,
+          allowedTools,
+          true
+        );
+      }
+    }
+  }, [
+    permissionRequest,
+    currentSessionId,
+    sendMessage,
+    allowedTools,
+    closePermissionRequest,
+    recordDenial,
+  ]);
 
   // Plan mode request handlers
   const handlePlanAcceptWithEdits = useCallback(() => {
