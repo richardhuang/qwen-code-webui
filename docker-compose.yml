@@ -1,0 +1,56 @@
+services:
+  qwen-code-webui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: qwen-code-webui:latest
+    container_name: qwen-code-webui
+    ports:
+      - "3000:3000"
+    environment:
+      # Server configuration
+      - PORT=3000
+      - HOST=0.0.0.0
+      # Uncomment to enable debug mode
+      # - DEBUG=true
+
+      # Qwen CLI path (default auto-detect)
+      # - QWEN_PATH=/usr/local/bin/qwen
+
+      # LLM output language (default: auto-detect from system)
+      # Set to a specific language like "zh" for Chinese, "en" for English
+      - QWEN_CODE_LANG=zh
+    volumes:
+      # Mount qwen-code config directory for authentication
+      - ~/.qwen:/home/nodejs/.qwen:ro
+
+      # Mount project directories you want to work with
+      # Add more volume mounts as needed for your projects
+      # - ~/projects:/projects:ro
+
+      # Mount qwen-code binary if installed on host
+      # - /usr/local/bin/qwen:/usr/local/bin/qwen:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Optional: Development service with hot reload
+  # Uncomment to use for development
+  # dev:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.dev
+  #   image: qwen-code-webui:dev
+  #   container_name: qwen-code-webui-dev
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - ./frontend:/app/frontend
+  #     - ./backend:/app/backend
+  #     - ~/.qwen:/home/nodejs/.qwen:ro
+  #   environment:
+  #     - DEBUG=true
