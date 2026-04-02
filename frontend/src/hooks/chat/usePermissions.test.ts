@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { usePermissions } from "./usePermissions";
 
@@ -160,5 +160,277 @@ describe("usePermissions", () => {
       patterns: ["Bash(command:*)"],
       toolUseId: "tool-123",
     });
+  });
+});
+
+describe("usePermissions - Command Result Loop Detection", () => {
+  it("should not detect loop on first error result", () => {
+    const { result } = renderHook(() => usePermissions());
+
+    let loopRequest: ReturnType<typeof result.current.checkCommandResultLoop>;
+
+    act(() => {
+      loopRequest = result.current.checkCommandResultLoop(
+        "run_shell_command",
+        { command: "go build" },
+        { exitCode: 1, output: "go: go.mod file not found" }
+      );
+    });
+
+    expect(loopRequest).toBeNull();
+    expect(result.current.commandLoopRequest).toBeNull();
+  });
+
+  it("should not detect loop on second error result", () => {
+    const { result } = renderHook(() => usePermissions());
+
+    act(() => {
+      result.current.checkCommandResultLoop(
+        "run_shell_command",
+        { command: "go build" },
+        { exitCode: 1, output: "go: go.mod file not found" }
+      );
+    });
+
+    let loopRequest: ReturnType<typeof result.current.checkCommandResultLoop>;
+    act(() => {
+      loopRequest = result.current.checkCommandResultLoop(
+        "run_shell_command",
+        { command: "go build" },
+        { exitCode: 1, output: "go: go.mod file not found" }
+      );
+    });
+
+    expect(loopRequest).toBeNull();
+  });
+
+  it("should detect loop on third same error result", () => {
+    const { result } = renderHook(() => usePermissions());
+
+    // First call
+    act(() => {
+      result.current.checkCommandResultLoop(
+        "run_shell_command",
+        { command: "go build" },
+        { exitCode: 1, output: "go: go.mod file not found" }
+      );
+    });
+
+    // Second call
+    act(() => {
+      result.current.checkCommandResultLoop(
+        "run_shell_command",
+        { command: "go build" },
+        { exitCode: 1, output: "go: go.mod file not found" }
+      );
+    });
+
+    // Third call - should trigger loop detection
+    let loopRequest: ReturnType<typeof result.current.checkCommandResultLoop>;
+    act(() => {
+      loopRequest = result.current.checkCommandResultLoop(
+        "run_shell_command",
+        { command: "go build" },
+        { exitCode: 1, output: "go: go.mod file not found" }
+      );
+    });
+
+    expect(loopRequest).not.toBeNull();
+    expect(loopRequest?.toolName).toBe("run_shell_command");
+    expect(loopRequest?.command).toBe("go build");
+    expect(loopRequest?.errorOutput).toBe("go: go.mod file not found");
+  });
+
+  it("should not detect loop for different errors", () => {
+    const { result } = renderHook(() => usePermissions());
+
+    // First call - error 1
+    act(() => {
+      result.current.checkCommandResultLoop(
+        "run_shell_command",
+        { command: "go build" },
+        { exitCode: 1, output: "go: go.mod file not found" }
+      );
+    });
+
+    // Second call - different error
+    act(() => {
+      result.current.checkCommandResultLoop(
+        "run_shell_command",
+        { command: "go build" },
+        { exitCode: 1, output: "cannot find package" }
+      );
+    });
+
+    // Third call - another different error
+    let loopRequest: ReturnType<typeof result.current.checkCommandResultLoop>;
+    act(() => {
+      loopRequest = result.current.checkCommandResultLoop(
+        "run_shell_command",
+        { command: "go build" },
+        { exitCode: 1, output: "undefined variable" }
+      );
+    });
+
+    expect(loopRequest).toBeNull();
+  });
+
+  it("should not detect loop for successful results", () => {
+    const { result } = renderHook(() => usePermissions());
+
+    // First call - error
+    act(() => {
+      result.current.checkCommandResultLoop(
+        "run_shell_command",
+        { command: "go build" },
+        { exitCode: 1, output: "go: go.mod file not found" }
+      );
+    });
+
+    // Second call - success (should reset tracking)
+    act(() => {
+      result.current.checkCommandResultLoop(
+        "run_shell_command",
+        { command: "go build" },
+        { exitCode: 0, output: "Build successful" }
+      );
+    });
+
+    // Third call - error again (count should be 1)
+    act(() => {
+      result.current.checkCommandResultLoop(
+        "run_shell_command",
+        { command: "go build" },
+        { exitCode: 1, output: "go: go.mod file not found" }
+      );
+    });
+
+    // Fourth call - error (count should be 2)
+    let loopRequest: ReturnType<typeof result.current.checkCommandResultLoop>;
+    act(() => {
+      loopRequest = result.current.checkCommandResultLoop(
+        "run_shell_command",
+        { command: "go build" },
+        { exitCode: 1, output: "go: go.mod file not found" }
+      );
+    });
+
+    expect(loopRequest).toBeNull();
+  });
+
+  it("should not detect loop for excluded tools", () => {
+    const { result } = renderHook(() => usePermissions());
+
+    // read_file is in excluded tools
+    let loopRequest: ReturnType<typeof result.current.checkCommandResultLoop>;
+
+    // Call 3 times with same error
+    for (let i = 0; i < 3; i++) {
+      act(() => {
+        loopRequest = result.current.checkCommandResultLoop(
+          "read_file",
+          { file_path: "/test/file.txt" },
+          { exitCode: 1, output: "file not found" }
+        );
+      });
+    }
+
+    expect(loopRequest).toBeNull();
+  });
+
+  it("should show and close command loop request dialog", () => {
+    const { result } = renderHook(() => usePermissions());
+
+    const testRequest = {
+      isOpen: true,
+      toolName: "run_shell_command",
+      command: "go build",
+      errorOutput: "go: go.mod file not found",
+    };
+
+    act(() => {
+      result.current.showCommandLoopRequest(testRequest);
+    });
+
+    expect(result.current.commandLoopRequest).toEqual(testRequest);
+
+    act(() => {
+      result.current.closeCommandLoopRequest();
+    });
+
+    expect(result.current.commandLoopRequest).toBeNull();
+  });
+
+  it("should disable loop detection for session", () => {
+    const { result } = renderHook(() => usePermissions());
+
+    // Trigger loop detection
+    for (let i = 0; i < 3; i++) {
+      act(() => {
+        result.current.checkCommandResultLoop(
+          "run_shell_command",
+          { command: "go build" },
+          { exitCode: 1, output: "go: go.mod file not found" }
+        );
+      });
+    }
+
+    // Show dialog
+    act(() => {
+      result.current.showCommandLoopRequest({
+        isOpen: true,
+        toolName: "run_shell_command",
+        command: "go build",
+        errorOutput: "go: go.mod file not found",
+      });
+    });
+
+    expect(result.current.commandLoopRequest).not.toBeNull();
+
+    // Disable loop detection (simulating "continue" button)
+    act(() => {
+      result.current.disableCommandResultLoopDetection();
+    });
+
+    expect(result.current.commandLoopRequest).toBeNull();
+
+    // After disabling, same errors should not trigger loop
+    for (let i = 0; i < 3; i++) {
+      let loopRequest: ReturnType<typeof result.current.checkCommandResultLoop>;
+      act(() => {
+        loopRequest = result.current.checkCommandResultLoop(
+          "run_shell_command",
+          { command: "go build" },
+          { exitCode: 1, output: "go: go.mod file not found" }
+        );
+      });
+      // Should be null because tracking was cleared
+    }
+  });
+
+  it("should detect loop with error keywords even without exit code", () => {
+    const { result } = renderHook(() => usePermissions());
+
+    // Call 3 times with error keyword in output
+    for (let i = 0; i < 2; i++) {
+      act(() => {
+        result.current.checkCommandResultLoop(
+          "run_shell_command",
+          { command: "npm install" },
+          { output: "Error: package not found" }
+        );
+      });
+    }
+
+    let loopRequest: ReturnType<typeof result.current.checkCommandResultLoop>;
+    act(() => {
+      loopRequest = result.current.checkCommandResultLoop(
+        "run_shell_command",
+        { command: "npm install" },
+        { output: "Error: package not found" }
+      );
+    });
+
+    expect(loopRequest).not.toBeNull();
   });
 });
