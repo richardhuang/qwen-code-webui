@@ -16,6 +16,7 @@ import { useAutoHistoryLoader } from "../hooks/useHistoryLoader";
 import { useSettings } from "../hooks/useSettings";
 import { useExpandThinking } from "../hooks/useSettings";
 import { useModel } from "../hooks/useModel";
+import { useOpenAceSessionTracker } from "../hooks/useOpenAceSessionTracker";
 import { SettingsButton } from "./SettingsButton";
 import { SettingsModal } from "./SettingsModal";
 import { HistoryButton } from "./chat/HistoryButton";
@@ -154,6 +155,13 @@ export function ChatPage() {
   } = usePermissions({
     onPermissionModeChange: setPermissionMode,
   });
+
+  // Track session with Open-ACE for work duration statistics
+  useOpenAceSessionTracker(
+    currentSessionId || null,
+    workingDirectory || null,
+    !isHistoryView
+  );
 
   const handlePermissionError = useCallback(
     (toolName: string, patterns: string[], toolUseId: string) => {

@@ -1,10 +1,23 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { FolderIcon } from "@heroicons/react/24/outline";
+import {
+  FolderIcon,
+  PlusIcon,
+  TrashIcon,
+  ArrowPathIcon,
+} from "@heroicons/react/24/outline";
 import type { ProjectsResponse, ProjectInfo } from "../types";
 import { getProjectsUrl } from "../config/api";
 import { SettingsButton } from "./SettingsButton";
 import { SettingsModal } from "./SettingsModal";
+import { AddProjectModal } from "./AddProjectModal";
+import { ConfirmModal } from "./ConfirmModal";
+import {
+  isIntegratedMode,
+  fetchOpenAceProjects,
+  deleteOpenAceProject,
+  type OpenAceProject,
+} from "../api/openace";
 
 const LAST_PROJECT_KEY = "qwen-code-last-project";
 
@@ -18,31 +31,92 @@ function sortProjects(projects: ProjectInfo[]): ProjectInfo[] {
     const aParts = a.path.split("/").filter(Boolean);
     const bParts = b.path.split("/").filter(Boolean);
 
-    // Compare path segments one by one
     const minLen = Math.min(aParts.length, bParts.length);
     for (let i = 0; i < minLen; i++) {
       if (aParts[i] !== bParts[i]) {
-        // Different parent at this level, sort alphabetically
         return aParts[i].localeCompare(bParts[i], undefined, { sensitivity: "base" });
       }
     }
 
-    // If all compared segments are equal, shorter path (parent) comes first
     return aParts.length - bParts.length;
   });
 }
 
+/**
+ * Convert Open-ACE project to local ProjectInfo format
+ */
+function openAceProjectToLocal(project: OpenAceProject): ProjectInfo {
+  // Extract encoded name from path (same encoding as qwen-code-webui)
+  const encodedName = project.path
+    .replace(/^[A-Za-z]:/, "") // Remove Windows drive letter
+    .replace(/^\/+/, "") // Remove leading slashes
+    .replace(/[^a-zA-Z0-9]/g, "-"); // Replace non-alphanumeric with dash
+
+  return {
+    path: project.path,
+    encodedName: "-" + encodedName,
+  };
+}
+
 export function ProjectSelector() {
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
+  const [openAceProjects, setOpenAceProjects] = useState<OpenAceProject[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
+  const [deleteProject, setDeleteProject] = useState<OpenAceProject | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const navigate = useNavigate();
+
+  const integrated = isIntegratedMode();
+
+  const loadProjects = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (integrated) {
+        // Load from Open-ACE
+        const response = await fetchOpenAceProjects();
+        const aceProjects = response.projects || [];
+        setOpenAceProjects(aceProjects);
+        
+        // Convert to local format
+        const localProjects = aceProjects.map(openAceProjectToLocal);
+        setProjects(sortProjects(localProjects));
+      } else {
+        // Load from local API
+        const response = await fetch(getProjectsUrl());
+        if (!response.ok) {
+          throw new Error(`Failed to load projects: ${response.statusText}`);
+        }
+        const data: ProjectsResponse = await response.json();
+        setProjects(sortProjects(data.projects));
+        setOpenAceProjects([]);
+      }
+
+      // Set default selection to most recently used project
+      if (projects.length > 0) {
+        const lastProject = localStorage.getItem(LAST_PROJECT_KEY);
+        if (lastProject) {
+          const lastIndex = projects.findIndex((p) => p.path === lastProject);
+          if (lastIndex !== -1) {
+            setSelectedIndex(lastIndex);
+          }
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load projects");
+    } finally {
+      setLoading(false);
+    }
+  }, [integrated]);
 
   useEffect(() => {
     loadProjects();
-  }, []);
+  }, [loadProjects]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -67,39 +141,9 @@ export function ProjectSelector() {
     }
   }, [projects, selectedIndex]);
 
-  const loadProjects = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(getProjectsUrl());
-      if (!response.ok) {
-        throw new Error(`Failed to load projects: ${response.statusText}`);
-      }
-      const data: ProjectsResponse = await response.json();
-      // Sort projects: parent directories first, then alphabetically
-      const sortedProjects = sortProjects(data.projects);
-      setProjects(sortedProjects);
-
-      // Set default selection to most recently used project
-      if (sortedProjects.length > 0) {
-        const lastProject = localStorage.getItem(LAST_PROJECT_KEY);
-        if (lastProject) {
-          const lastIndex = sortedProjects.findIndex((p) => p.path === lastProject);
-          if (lastIndex !== -1) {
-            setSelectedIndex(lastIndex);
-          }
-        }
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load projects");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleProjectSelect = useCallback((projectPath: string) => {
-    // Save to localStorage for next time
     localStorage.setItem(LAST_PROJECT_KEY, projectPath);
-    
+
     const normalizedPath = projectPath.startsWith("/")
       ? projectPath
       : `/${projectPath}`;
@@ -114,6 +158,49 @@ export function ProjectSelector() {
     setIsSettingsOpen(false);
   };
 
+  const handleAddProject = () => {
+    setIsAddProjectOpen(true);
+  };
+
+  const handleProjectAdded = (_project: OpenAceProject) => {
+    // Reload projects
+    loadProjects();
+    setIsAddProjectOpen(false);
+  };
+
+  const handleDeleteClick = (project: OpenAceProject, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeleteProject(project);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteProject) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteOpenAceProject(deleteProject.id);
+      // Reload projects
+      await loadProjects();
+      setDeleteProject(null);
+    } catch (err) {
+      console.error("Failed to delete project:", err);
+      // Show error - could add a toast notification here
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Get display name for Open-ACE project
+  const getProjectDisplayName = (project: ProjectInfo): string => {
+    if (!integrated) return project.path;
+    
+    const aceProject = openAceProjects.find((p) => p.path === project.path);
+    if (aceProject?.name) return aceProject.name;
+    
+    // Extract last segment of path
+    return project.path.split(/[/\\]/).filter(Boolean).pop() || project.path;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -126,8 +213,15 @@ export function ProjectSelector() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <div className="text-red-600 dark:text-red-400">Error: {error}</div>
+        <button
+          onClick={loadProjects}
+          className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600"
+        >
+          <ArrowPathIcon className="h-4 w-4" />
+          Retry
+        </button>
       </div>
     );
   }
@@ -140,53 +234,127 @@ export function ProjectSelector() {
           <h1 className="text-slate-800 dark:text-slate-100 text-3xl font-bold tracking-tight">
             Select a Project
           </h1>
-          <SettingsButton onClick={handleSettingsClick} />
+          <div className="flex items-center gap-2">
+            {integrated && (
+              <button
+                onClick={handleAddProject}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+              >
+                <PlusIcon className="h-4 w-4" />
+                Add Project
+              </button>
+            )}
+            <SettingsButton onClick={handleSettingsClick} />
+          </div>
         </div>
 
         <div className="space-y-3">
-          {projects.length > 0 && (
+          {projects.length > 0 ? (
             <>
               <h2 className="text-slate-700 dark:text-slate-300 text-lg font-medium mb-4">
-                Recent Projects
+                {integrated ? "Your Projects" : "Recent Projects"}
               </h2>
-              {projects.map((project, index) => (
-                <button
-                  key={project.path}
-                  onClick={() => {
-                    setSelectedIndex(index);
-                    handleProjectSelect(project.path);
-                  }}
-                  className={`w-full flex items-center gap-3 p-4 border rounded-lg transition-colors text-left ${
-                    index === selectedIndex
-                      ? "bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 ring-2 ring-blue-500"
-                      : "bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700"
-                  }`}
-                >
-                  <FolderIcon className={`h-5 w-5 flex-shrink-0 ${
-                    index === selectedIndex
-                      ? "text-blue-500 dark:text-blue-400"
-                      : "text-slate-500 dark:text-slate-400"
-                  }`} />
-                  <span className={`font-mono text-sm flex-1 ${
-                    index === selectedIndex
-                      ? "text-blue-800 dark:text-blue-200 font-semibold"
-                      : "text-slate-800 dark:text-slate-200"
-                  }`}>
-                    {project.path}
-                  </span>
-                  {index === selectedIndex && (
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      Press Enter
-                    </span>
-                  )}
-                </button>
-              ))}
+              {projects.map((project, index) => {
+                const aceProject = openAceProjects.find((p) => p.path === project.path);
+                const displayName = getProjectDisplayName(project);
+                
+                return (
+                  <div
+                    key={project.path}
+                    className={`flex items-center gap-3 p-4 border rounded-lg transition-colors cursor-pointer ${
+                      index === selectedIndex
+                        ? "bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 ring-2 ring-blue-500"
+                        : "bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700"
+                    }`}
+                    onClick={() => {
+                      setSelectedIndex(index);
+                      handleProjectSelect(project.path);
+                    }}
+                  >
+                    <FolderIcon
+                      className={`h-5 w-5 flex-shrink-0 ${
+                        index === selectedIndex
+                          ? "text-blue-500 dark:text-blue-400"
+                          : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className={`font-mono text-sm truncate ${
+                          index === selectedIndex
+                            ? "text-blue-800 dark:text-blue-200 font-semibold"
+                            : "text-slate-800 dark:text-slate-200"
+                        }`}
+                      >
+                        {displayName}
+                      </div>
+                      {integrated && aceProject?.name && (
+                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                          {project.path}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Delete button for integrated mode */}
+                    {integrated && aceProject && (
+                      <button
+                        onClick={(e) => handleDeleteClick(aceProject, e)}
+                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Remove project"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    )}
+                    
+                    {index === selectedIndex && (
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        Press Enter
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12">
+              <FolderIcon className="h-16 w-16 text-slate-300 dark:text-slate-600 mb-4" />
+              <p className="text-slate-500 dark:text-slate-400 mb-4">
+                No projects yet
+              </p>
+              {integrated && (
+                <button
+                  onClick={handleAddProject}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  Add Your First Project
+                </button>
+              )}
+            </div>
           )}
         </div>
 
         {/* Settings Modal */}
         <SettingsModal isOpen={isSettingsOpen} onClose={handleSettingsClose} />
+
+        {/* Add Project Modal */}
+        <AddProjectModal
+          isOpen={isAddProjectOpen}
+          onClose={() => setIsAddProjectOpen(false)}
+          onProjectAdded={handleProjectAdded}
+        />
+
+        {/* Delete Confirmation Modal */}
+        <ConfirmModal
+          isOpen={deleteProject !== null}
+          onClose={() => setDeleteProject(null)}
+          onConfirm={handleConfirmDelete}
+          title="Remove Project"
+          message={`Are you sure you want to remove "${deleteProject?.name || deleteProject?.path}"? This will delete the project's chat history but won't affect the actual directory on disk.`}
+          confirmText="Remove"
+          variant="danger"
+          isLoading={isDeleting}
+        />
       </div>
     </div>
   );
