@@ -12,6 +12,7 @@ import {
   type ConfigContext,
   createConfigMiddleware,
 } from "./middleware/config.ts";
+import { createTokenAuthMiddleware } from "./middleware/tokenAuth.ts";
 import { handleProjectsRequest } from "./handlers/projects.ts";
 import { handleHistoriesRequest } from "./handlers/histories.ts";
 import { handleConversationRequest } from "./handlers/conversations.ts";
@@ -30,6 +31,7 @@ export interface AppConfig {
   debugMode: boolean;
   staticPath: string;
   cliPath: string; // Actual CLI script path detected by validateQwenCli
+  tokenSecret?: string; // Secret for Open-ACE integration token validation
 }
 
 export function createApp(
@@ -50,6 +52,12 @@ export function createApp(
       allowHeaders: ["Content-Type"],
     }),
   );
+
+  // Token authentication middleware for Open-ACE integration
+  // Only applies to API routes (not static assets or SPA pages)
+  // Static assets (JS, CSS) and index.html don't carry token from iframe URL
+  // Frontend JS reads token from URL query param and includes in API requests
+  app.use("/api/*", createTokenAuthMiddleware(config.tokenSecret));
 
   // Configuration middleware - makes app settings available to all handlers
   app.use(

@@ -1,4 +1,6 @@
 // API configuration - uses relative paths with Vite proxy in development
+import { addTokenToUrl } from "../utils/token";
+
 export const API_CONFIG = {
   ENDPOINTS: {
     VERSION: "/api/version",
@@ -13,39 +15,48 @@ export const API_CONFIG = {
 
 // Helper function to get full API URL
 export const getApiUrl = (endpoint: string) => {
-  return endpoint;
+  return addTokenToUrl(endpoint);
 };
 
 // Helper function to get abort URL
 export const getAbortUrl = (requestId: string) => {
-  return `${API_CONFIG.ENDPOINTS.ABORT}/${requestId}`;
+  return addTokenToUrl(`${API_CONFIG.ENDPOINTS.ABORT}/${requestId}`);
 };
 
 // Helper function to get chat URL
 export const getChatUrl = () => {
-  return API_CONFIG.ENDPOINTS.CHAT;
+  return addTokenToUrl(API_CONFIG.ENDPOINTS.CHAT);
 };
 
 // Helper function to get projects URL
 export const getProjectsUrl = () => {
-  return API_CONFIG.ENDPOINTS.PROJECTS;
+  return addTokenToUrl(API_CONFIG.ENDPOINTS.PROJECTS);
 };
 
 // Helper function to get histories URL
 export const getHistoriesUrl = (projectPath: string) => {
   const encodedPath = encodeURIComponent(projectPath);
-  return `${API_CONFIG.ENDPOINTS.HISTORIES}/${encodedPath}/histories`;
+  return addTokenToUrl(
+    `${API_CONFIG.ENDPOINTS.HISTORIES}/${encodedPath}/histories`
+  );
 };
 
 // Helper function to get conversation URL
 export const getConversationUrl = (
   encodedProjectName: string,
-  sessionId: string,
+  sessionId: string
 ) => {
-  return `${API_CONFIG.ENDPOINTS.CONVERSATIONS}/${encodedProjectName}/histories/${sessionId}`;
+  return addTokenToUrl(
+    `${API_CONFIG.ENDPOINTS.CONVERSATIONS}/${encodedProjectName}/histories/${sessionId}`
+  );
 };
 
 // Helper function to get models URL
 export const getModelsUrl = () => {
-  return API_CONFIG.ENDPOINTS.MODELS;
+  return addTokenToUrl(API_CONFIG.ENDPOINTS.MODELS);
+};
+
+// Helper function to get version URL
+export const getVersionUrl = () => {
+  return addTokenToUrl(API_CONFIG.ENDPOINTS.VERSION);
 };

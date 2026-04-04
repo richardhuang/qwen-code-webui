@@ -9,5 +9,6 @@ export interface AppConfig {
   debugMode: boolean;
   runtime: Runtime;
   cliPath: string; // Path to actual CLI script detected by validateQwenCli
+  tokenSecret?: string; // Secret for Open-ACE integration token validation
   // Future configuration options can be added here
 }

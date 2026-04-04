@@ -51,6 +51,7 @@ async function main(runtime: NodeRuntime) {
     debugMode: args.debug,
     staticPath,
     cliPath,
+    tokenSecret: args.tokenSecret,
   });
 
   // Start server (only show this message when everything is ready)

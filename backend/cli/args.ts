@@ -13,6 +13,7 @@ export interface ParsedArgs {
   port: number;
   host: string;
   qwenPath?: string;
+  tokenSecret?: string;
 }
 
 export function parseCliArgs(): ParsedArgs {
@@ -48,6 +49,10 @@ export function parseCliArgs(): ParsedArgs {
       "--qwen-path <path>",
       "Path to qwen executable (overrides automatic detection)",
     )
+    .option(
+      "--token-secret <secret>",
+      "Token secret for Open-ACE integration authentication (optional)",
+    )
     .option("-d, --debug", "Enable debug mode", false);
 
   // Parse arguments - Commander.js v14 handles this automatically
@@ -63,5 +68,6 @@ export function parseCliArgs(): ParsedArgs {
     port: options.port,
     host: options.host,
     qwenPath: options.qwenPath,
+    tokenSecret: options.tokenSecret,
   };
 }

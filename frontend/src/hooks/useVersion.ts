@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getVersionUrl } from "../config/api";
 
 interface VersionInfo {
   version: string;
@@ -18,7 +19,7 @@ export function useVersion(): UseVersionResult {
   useEffect(() => {
     const fetchVersion = async () => {
       try {
-        const response = await fetch("/api/version");
+        const response = await fetch(getVersionUrl());
         if (!response.ok) {
           throw new Error("Failed to fetch version");
         }
