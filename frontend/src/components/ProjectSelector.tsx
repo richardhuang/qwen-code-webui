@@ -6,6 +6,7 @@ import {
   TrashIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
+import { useTranslation } from "react-i18next";
 import type { ProjectsResponse, ProjectInfo } from "../types";
 import { getProjectsUrl } from "../config/api";
 import { SettingsButton } from "./SettingsButton";
@@ -59,6 +60,7 @@ function openAceProjectToLocal(project: OpenAceProject): ProjectInfo {
 }
 
 export function ProjectSelector() {
+  const { t } = useTranslation();
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [openAceProjects, setOpenAceProjects] = useState<OpenAceProject[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
@@ -205,7 +207,7 @@ export function ProjectSelector() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-slate-600 dark:text-slate-400">
-          Loading projects...
+          {t("projectSelector.loadingProjects")}
         </div>
       </div>
     );
@@ -214,13 +216,13 @@ export function ProjectSelector() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <div className="text-red-600 dark:text-red-400">Error: {error}</div>
+        <div className="text-red-600 dark:text-red-400">{t("common.error")}: {error}</div>
         <button
           onClick={loadProjects}
           className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600"
         >
           <ArrowPathIcon className="h-4 w-4" />
-          Retry
+          {t("common.retry")}
         </button>
       </div>
     );
@@ -232,7 +234,7 @@ export function ProjectSelector() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-slate-800 dark:text-slate-100 text-3xl font-bold tracking-tight">
-            Select a Project
+            {t("projectSelector.title")}
           </h1>
           <div className="flex items-center gap-2">
             {integrated && (
@@ -241,7 +243,7 @@ export function ProjectSelector() {
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
               >
                 <PlusIcon className="h-4 w-4" />
-                Add Project
+                {t("project.addProject")}
               </button>
             )}
             <SettingsButton onClick={handleSettingsClick} />
@@ -252,7 +254,7 @@ export function ProjectSelector() {
           {projects.length > 0 ? (
             <>
               <h2 className="text-slate-700 dark:text-slate-300 text-lg font-medium mb-4">
-                {integrated ? "Your Projects" : "Recent Projects"}
+                {integrated ? t("projectSelector.yourProjects") : t("projectSelector.recentProjects")}
               </h2>
               {projects.map((project, index) => {
                 const aceProject = openAceProjects.find((p) => p.path === project.path);
@@ -308,7 +310,7 @@ export function ProjectSelector() {
                     
                     {index === selectedIndex && (
                       <span className="text-xs text-slate-500 dark:text-slate-400">
-                        Press Enter
+                        {t("projectSelector.pressEnter")}
                       </span>
                     )}
                   </div>
@@ -319,7 +321,7 @@ export function ProjectSelector() {
             <div className="flex flex-col items-center justify-center py-12">
               <FolderIcon className="h-16 w-16 text-slate-300 dark:text-slate-600 mb-4" />
               <p className="text-slate-500 dark:text-slate-400 mb-4">
-                No projects yet
+                {t("projectSelector.noProjects")}
               </p>
               {integrated && (
                 <button
@@ -327,7 +329,7 @@ export function ProjectSelector() {
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
                 >
                   <PlusIcon className="h-4 w-4" />
-                  Add Your First Project
+                  {t("projectSelector.addFirstProject")}
                 </button>
               )}
             </div>
@@ -349,9 +351,9 @@ export function ProjectSelector() {
           isOpen={deleteProject !== null}
           onClose={() => setDeleteProject(null)}
           onConfirm={handleConfirmDelete}
-          title="Remove Project"
-          message={`Are you sure you want to remove "${deleteProject?.name || deleteProject?.path}"? This will delete the project's chat history but won't affect the actual directory on disk.`}
-          confirmText="Remove"
+          title={t("projectSelector.removeProject")}
+          message={t("projectSelector.removeConfirmMessage", { name: deleteProject?.name || deleteProject?.path })}
+          confirmText={t("projectSelector.remove")}
           variant="danger"
           isLoading={isDeleting}
         />

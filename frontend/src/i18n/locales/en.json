@@ -65,5 +65,25 @@
     "exceeded": "Quota Exceeded",
     "exceededMessage": "Your token or request quota has been exhausted. Please contact the administrator.",
     "exceededLimits": "Exceeded Limits:"
+  },
+  "projectSelector": {
+    "title": "Select a Project",
+    "loadingProjects": "Loading projects...",
+    "yourProjects": "Your Projects",
+    "recentProjects": "Recent Projects",
+    "noProjects": "No projects yet",
+    "addFirstProject": "Add Your First Project",
+    "pressEnter": "Press Enter",
+    "removeProject": "Remove Project",
+    "remove": "Remove",
+    "removeConfirmMessage": "Are you sure you want to remove \"{{name}}\"? This will delete the project's chat history but won't affect the actual directory on disk."
+  },
+  "slashCommands": {
+    "skillsDescription": "Show available skills",
+    "clearDescription": "Clear conversation context",
+    "clearConfirmTitle": "Clear Conversation",
+    "clearConfirmMessage": "Are you sure you want to clear the conversation history? This action cannot be undone.",
+    "clearConfirmButton": "Clear",
+    "contextCleared": "Conversation context has been cleared."
   }
 }

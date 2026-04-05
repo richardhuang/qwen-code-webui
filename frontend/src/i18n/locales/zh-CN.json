@@ -65,5 +65,25 @@
     "exceeded": "配额已超限",
     "exceededMessage": "您的 token 或请求配额已用尽，请联系管理员。",
     "exceededLimits": "已超限："
+  },
+  "projectSelector": {
+    "title": "选择项目",
+    "loadingProjects": "加载项目中...",
+    "yourProjects": "您的项目",
+    "recentProjects": "最近项目",
+    "noProjects": "暂无项目",
+    "addFirstProject": "添加您的第一个项目",
+    "pressEnter": "按回车键",
+    "removeProject": "移除项目",
+    "remove": "移除",
+    "removeConfirmMessage": "确定要移除 \"{{name}}\" 吗？这将删除项目的聊天历史，但不会影响磁盘上的实际目录。"
+  },
+  "slashCommands": {
+    "skillsDescription": "显示可用技能",
+    "clearDescription": "清空对话上下文",
+    "clearConfirmTitle": "清空对话",
+    "clearConfirmMessage": "确定要清空对话历史吗？此操作无法撤销。",
+    "clearConfirmButton": "清空",
+    "contextCleared": "对话上下文已清空。"
   }
 }
