@@ -19,6 +19,7 @@ import { useExpandThinking } from "../hooks/useSettings";
 import { useModel } from "../hooks/useModel";
 import { useOpenAceSessionTracker } from "../hooks/useOpenAceSessionTracker";
 import { getSlashCommand } from "../utils/slashCommands";
+import { generateId } from "../utils/id";
 import { SettingsButton } from "./SettingsButton";
 import { SettingsModal } from "./SettingsModal";
 import { ConfirmModal } from "./ConfirmModal";
@@ -342,8 +343,10 @@ export function ChatPage() {
 
   // Clear conversation handler
   const handleClearConversation = useCallback(() => {
+    // Clear messages and generate a new session ID to start fresh
+    // The old history files remain on server but won't be loaded
     setMessages([]);
-    setCurrentSessionId(null);
+    setCurrentSessionId(generateId());
     setHasShownInitMessage(false);
     setShowClearConfirm(false);
     // Add a system message to indicate context was cleared
