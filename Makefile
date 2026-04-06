@@ -44,6 +44,10 @@ build-frontend:
 build-backend:
 	cd backend && npm run build
 
+# Build standalone executable with Deno (requires deno installed)
+build-deno: build-frontend
+	cd backend && deno task build
+
 # Development
 dev-frontend:
 	cd frontend && npm run dev
