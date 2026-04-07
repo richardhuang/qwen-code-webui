@@ -58,7 +58,8 @@
     "@logtape/pretty": "^1.0.0",
     "@qwen-code/sdk": "^0.1.4",
     "commander": "^14.0.0",
-    "hono": "^4.8.5"
+    "hono": "^4.8.5",
+    "vite": "^7.3.2"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
