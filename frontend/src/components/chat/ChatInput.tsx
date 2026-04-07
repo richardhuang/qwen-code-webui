@@ -8,6 +8,7 @@ import { useSlashCommand } from "../../hooks/useSlashCommand";
 import { SlashCommandSuggestion } from "./SlashCommandSuggestion";
 import { PermissionInputPanel } from "./PermissionInputPanel";
 import { PlanPermissionInputPanel } from "./PlanPermissionInputPanel";
+import { isIntegratedMode } from "../../api/openace";
 import type { PermissionMode } from "../../types";
 import type { SlashCommand, SubCommand } from "../../utils/slashCommands";
 import type { TokenUsageInfo } from "../../utils/tokenUsage";
@@ -130,6 +131,23 @@ export function ChatInput({
     if (!isLoading && !showPermissions && inputRef.current) {
       inputRef.current.focus();
     }
+  }, [isLoading, showPermissions]);
+
+  // Listen for focus request from Open-ACE parent when switching tabs
+  useEffect(() => {
+    if (!isIntegratedMode()) return;
+
+    const handleFocusMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'openace-focus-input') {
+        // Focus input when not loading and not in permission mode
+        if (!isLoading && !showPermissions && inputRef.current) {
+          inputRef.current.focus();
+        }
+      }
+    };
+
+    window.addEventListener('message', handleFocusMessage);
+    return () => window.removeEventListener('message', handleFocusMessage);
   }, [isLoading, showPermissions]);
 
   // Auto-resize textarea
