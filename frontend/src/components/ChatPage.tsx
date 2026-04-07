@@ -39,6 +39,21 @@ import { normalizeWindowsPath } from "../utils/pathUtils";
 import { isIntegratedMode } from "../api/openace";
 import type { StreamingContext } from "../hooks/streaming/useMessageProcessor";
 
+// Types for quota status
+interface QuotaUsage {
+  used: number;
+  limit: number | null;
+}
+
+interface QuotaPeriodStatus {
+  tokens?: QuotaUsage;
+  requests?: QuotaUsage;
+}
+
+interface QuotaStatus {
+  daily?: QuotaPeriodStatus;
+}
+
 export function ChatPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -49,7 +64,7 @@ export function ChatPage() {
   const { expandThinking, toggleExpandThinking } = useExpandThinking();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isQuotaExceeded, setIsQuotaExceeded] = useState(false);
-  const [quotaErrorStatus, setQuotaErrorStatus] = useState<Record<string, unknown> | null>(null);
+  const [quotaErrorStatus, setQuotaErrorStatus] = useState<QuotaStatus | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Model selection
