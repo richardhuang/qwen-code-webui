@@ -95,6 +95,8 @@ export function DemoPage() {
     }
 
     // Use separate arguments to avoid format string issues
+    // codeql[js/externally-controlled-format-string] Safe internal debug log
+    // theme is from controlled state, not user input
     console.log("[Demo] Theme applied:", theme, {
       classList: root.className,
       themeParam,

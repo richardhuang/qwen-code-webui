@@ -60,10 +60,13 @@ export function generateId(): UUID {
   }
 
   // 3rd choice: Math.random() fallback (least secure)
+  // codeql[js/insecure-random] Intentional fallback for non-HTTPS environments
+  // where crypto APIs are unavailable. Acceptable for non-security-critical IDs.
   console.debug(
     "Using Math.random() for ID generation - not cryptographically secure",
   );
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    // codeql[js/insecure-random] Intentional fallback for non-HTTPS environments
     const r = (Math.random() * 16) | 0;
     const v = c === "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
