@@ -192,7 +192,7 @@ export function ProjectSelector() {
     setIsAddProjectOpen(true);
   };
 
-  const handleProjectAdded = (_project: OpenAceProject) => {
+  const handleProjectAdded = () => {
     // Reload projects
     loadProjects();
     setIsAddProjectOpen(false);

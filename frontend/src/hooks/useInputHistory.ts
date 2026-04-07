@@ -101,7 +101,7 @@ export function useInputHistory() {
   // Navigate to previous history entry (up arrow)
   const navigatePrevious = useCallback((currentValue: string): string => {
     const currentHistory = historyRef.current;
-    let currentIndex = historyIndexRef.current;
+    const currentIndex = historyIndexRef.current;
 
     if (currentHistory.length === 0) return currentValue;
 
@@ -127,7 +127,7 @@ export function useInputHistory() {
 
   // Navigate to next history entry (down arrow)
   const navigateNext = useCallback((currentValue: string): string => {
-    let currentIndex = historyIndexRef.current;
+    const currentIndex = historyIndexRef.current;
     const storedCurrentInput = currentInputRef.current;
     const currentHistory = historyRef.current;
 

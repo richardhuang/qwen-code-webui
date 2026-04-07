@@ -29,7 +29,7 @@ describe("App Routing", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Select a Project")).toBeInTheDocument();
+      expect(screen.getByText("Your Projects")).toBeInTheDocument();
     });
   });
 

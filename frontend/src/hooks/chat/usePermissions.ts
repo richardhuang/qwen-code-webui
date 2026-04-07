@@ -111,6 +111,8 @@ export function usePermissions(options: UsePermissionsOptions = {}) {
   >(new Map());
   const [commandLoopRequest, setCommandLoopRequest] =
     useState<CommandLoopRequest | null>(null);
+  // Flag to permanently disable loop detection for current session
+  const loopDetectionDisabledRef = useRef(false);
 
   const showPermissionRequest = useCallback(
     (toolName: string, patterns: string[], toolUseId: string) => {
@@ -263,6 +265,11 @@ export function usePermissions(options: UsePermissionsOptions = {}) {
       input: Record<string, unknown>,
       result: { exitCode?: number; output: string }
     ): CommandLoopRequest | null => {
+      // Skip if loop detection is disabled for this session
+      if (loopDetectionDisabledRef.current) {
+        return null;
+      }
+
       const config = commandResultLoopConfigRef.current;
       const now = Date.now();
 
@@ -357,6 +364,7 @@ export function usePermissions(options: UsePermissionsOptions = {}) {
    * Disable command result loop detection for current session
    */
   const disableCommandResultLoopDetection = useCallback(() => {
+    loopDetectionDisabledRef.current = true;
     commandResultsRef.current.clear();
     closeCommandLoopRequest();
   }, [closeCommandLoopRequest]);

@@ -49,7 +49,7 @@ export function ChatPage() {
   const { expandThinking, toggleExpandThinking } = useExpandThinking();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isQuotaExceeded, setIsQuotaExceeded] = useState(false);
-  const [quotaErrorStatus, setQuotaErrorStatus] = useState<any>(null);
+  const [quotaErrorStatus, setQuotaErrorStatus] = useState<Record<string, unknown> | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Model selection
@@ -76,7 +76,33 @@ export function ChatPage() {
   }, [selectedModelConfig]);
 
   // Extract and normalize working directory from URL
+  // Priority: 1) URL parameter encodedProjectName, 2) URL path
+  const urlEncodedProjectName = searchParams.get("encodedProjectName");
+  
   const workingDirectory = (() => {
+    // If encodedProjectName is provided via URL parameter, resolve the actual path
+    if (urlEncodedProjectName) {
+      // Strategy 1: Look up from projects list (handles hyphens in paths correctly)
+      // The backend's /api/projects already decodes paths accurately using mapping files
+      if (projects.length > 0) {
+        const project = projects.find(
+          (p) => p.encodedName === urlEncodedProjectName,
+        );
+        if (project) {
+          return project.path;
+        }
+      }
+
+      // Strategy 2: Fallback naive decoding (has hyphen ambiguity)
+      // e.g., -Users-rhuang-workspace-open-ace -> /Users/rhuang/workspace/open-ace
+      // This incorrectly converts "open-ace" -> "open/ace" but works for paths without hyphens
+      if (urlEncodedProjectName.startsWith("-")) {
+        const decoded = urlEncodedProjectName.slice(1).replace(/-/g, "/");
+        return "/" + decoded;
+      }
+    }
+
+    // Otherwise derive from URL path
     const rawPath = location.pathname.replace("/projects", "");
     if (!rawPath) return undefined;
 
@@ -87,9 +113,10 @@ export function ChatPage() {
     return normalizeWindowsPath(decodedPath);
   })();
 
-  // Get current view and sessionId from query parameters
+  // Get current view, sessionId, and toolName from query parameters
   const currentView = searchParams.get("view");
   const sessionId = searchParams.get("sessionId");
+  const toolName = searchParams.get("toolName");
   const isHistoryView = currentView === "history";
   const isLoadedConversation = !!sessionId && !isHistoryView;
 
@@ -100,7 +127,14 @@ export function ChatPage() {
   const { permissionMode, setPermissionMode } = usePermissionMode();
 
   // Get encoded name for current working directory
+  // For URL parameter mode, use the encoded name directly
   const getEncodedName = useCallback(() => {
+    // If encodedProjectName is provided via URL parameter, use it directly
+    if (urlEncodedProjectName) {
+      return urlEncodedProjectName;
+    }
+    
+    // Otherwise derive from workingDirectory
     if (!workingDirectory || !projects.length) {
       return null;
     }
@@ -117,7 +151,7 @@ export function ChatPage() {
     const finalProject = project || normalizedProject;
 
     return finalProject?.encodedName || null;
-  }, [workingDirectory, projects]);
+  }, [workingDirectory, projects, urlEncodedProjectName]);
 
   // Load conversation history if sessionId is provided
   const {
@@ -128,6 +162,7 @@ export function ChatPage() {
   } = useAutoHistoryLoader(
     getEncodedName() || undefined,
     sessionId || undefined,
+    toolName || undefined,
   );
 
   // Initialize chat state with loaded history
@@ -791,7 +826,9 @@ export function ChatPage() {
                             setQuotaErrorStatus(null);
                           }
                         }
-                      } catch {}
+                      } catch {
+                        // Ignore close errors
+                      }
                     }}
                     className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
                   >

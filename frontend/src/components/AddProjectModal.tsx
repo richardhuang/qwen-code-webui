@@ -75,7 +75,7 @@ export function AddProjectModal({
 
       // Move to details step
       setStep("details");
-    } catch (err) {
+    } catch {
       // Assume path might not exist, proceed anyway
       setPathExists(false);
       setStep("details");
