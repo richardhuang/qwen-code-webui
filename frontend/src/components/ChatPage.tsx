@@ -663,6 +663,20 @@ export function ChatPage() {
     }
   }, []);
 
+  // Notify Open-ACE parent about session ID for workspace state persistence (Issue #65)
+  useEffect(() => {
+    if (isIntegratedMode() && window.parent !== window && currentSessionId) {
+      window.parent.postMessage({
+        type: "qwen-code-session-update",
+        sessionId: currentSessionId,
+        encodedProjectName: urlEncodedProjectName || undefined,
+        toolName: toolName || undefined,
+        title: undefined, // Title can be set later if needed
+        timestamp: Date.now(),
+      }, "*");
+    }
+  }, [currentSessionId, urlEncodedProjectName, toolName]);
+
   // Load projects to get encodedName mapping
   useEffect(() => {
     const loadProjects = async () => {
