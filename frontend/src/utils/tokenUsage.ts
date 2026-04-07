@@ -3,9 +3,10 @@ import type { ExtendedUsage } from "@qwen-code/sdk";
 
 /**
  * Token usage information for display in the status bar
+ * Uses promptTokens (current request's input tokens) instead of accumulated tokens
  */
 export interface TokenUsageInfo {
-  inputTokens: number;
+  promptTokens: number;
   outputTokens: number;
   totalTokens: number;
 }
@@ -24,36 +25,43 @@ function isResultMessageWithUsage(
 }
 
 /**
- * Calculate total token usage from all messages
- * Accumulates input_tokens and output_tokens from result messages
+ * Calculate token usage from the latest result message
+ * Uses prompt_tokens (current request's input tokens) instead of accumulated tokens
+ * This matches the context window calculation used by the API
  *
  * @param messages Array of all messages in the conversation
- * @returns TokenUsageInfo with accumulated token counts
+ * @returns TokenUsageInfo with current prompt token count
  */
 export function calculateTokenUsage(messages: AllMessage[]): TokenUsageInfo {
-  let inputTokens = 0;
+  let promptTokens = 0;
   let outputTokens = 0;
 
-  for (const message of messages) {
+  // Find the latest result message with usage data
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i];
     if (isResultMessageWithUsage(message)) {
       const usage = message.usage;
-      inputTokens += usage.input_tokens || 0;
-      outputTokens += usage.output_tokens || 0;
+      // Use prompt_tokens (input_tokens) from the latest message
+      // This represents the current request's prompt tokens, not accumulated
+      promptTokens = usage.input_tokens || 0;
+      outputTokens = usage.output_tokens || 0;
 
-      // Also count cache tokens as part of input
+      // Also count cache tokens as part of prompt
       if (usage.cache_creation_input_tokens) {
-        inputTokens += usage.cache_creation_input_tokens;
+        promptTokens += usage.cache_creation_input_tokens;
       }
       if (usage.cache_read_input_tokens) {
-        inputTokens += usage.cache_read_input_tokens;
+        promptTokens += usage.cache_read_input_tokens;
       }
+
+      break; // Only use the latest result message
     }
   }
 
   return {
-    inputTokens,
+    promptTokens,
     outputTokens,
-    totalTokens: inputTokens + outputTokens,
+    totalTokens: promptTokens, // Use promptTokens as total for context window calculation
   };
 }
 

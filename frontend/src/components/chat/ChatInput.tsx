@@ -392,12 +392,12 @@ export function ChatInput({
             {selectedModelName}
           </span>
         )}
-        {tokenUsage && tokenUsage.totalTokens > 0 && (
+        {tokenUsage && tokenUsage.promptTokens > 0 && (
           <span className="ml-2 text-slate-500 dark:text-slate-400">
             {" | "}
             <span className="text-slate-600 dark:text-slate-300">💾</span>
             {" "}
-            {formatTokenRatio(tokenUsage.totalTokens, contextWindowSize)}
+            {formatTokenRatio(tokenUsage.promptTokens, contextWindowSize)}
           </span>
         )}
       </button>
