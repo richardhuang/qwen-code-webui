@@ -37,7 +37,7 @@ import { HistoryView } from "./HistoryView";
 import { getChatUrl, getProjectsUrl } from "../config/api";
 import { KEYBOARD_SHORTCUTS } from "../utils/constants";
 import { normalizeWindowsPath } from "../utils/pathUtils";
-import { isIntegratedMode } from "../api/openace";
+import { isIntegratedMode, fetchOpenAceProjects } from "../api/openace";
 import type { StreamingContext } from "../hooks/streaming/useMessageProcessor";
 
 // Types for quota status
@@ -680,6 +680,7 @@ export function ChatPage() {
   // Notify Open-ACE parent about session ID for workspace state persistence (Issue #65)
   // Use getEncodedName() to get the correct encodedProjectName, which may come from
   // URL parameter or be derived from workingDirectory after projects are loaded
+  // Also depend on projects.length to trigger when projects are loaded (Issue #70)
   useEffect(() => {
     if (isIntegratedMode() && window.parent !== window && currentSessionId) {
       const encodedName = getEncodedName();
@@ -696,16 +697,32 @@ export function ChatPage() {
         }, "*");
       }
     }
-  }, [currentSessionId, getEncodedName, toolName]);
+  }, [currentSessionId, getEncodedName, toolName, projects.length]);
 
   // Load projects to get encodedName mapping
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        const response = await fetch(getProjectsUrl());
-        if (response.ok) {
-          const data = await response.json();
-          setProjects(data.projects || []);
+        if (isIntegratedMode()) {
+          // In integrated mode, fetch from Open-ACE API
+          const response = await fetchOpenAceProjects();
+          const aceProjects = response.projects || [];
+          // Convert Open-ACE projects to local format
+          const localProjects = aceProjects.map((p) => ({
+            path: p.path,
+            encodedName: "-" + p.path
+              .replace(/^[A-Za-z]:/, "") // Remove Windows drive letter
+              .replace(/^\/+/, "") // Remove leading slashes
+              .replace(/[^a-zA-Z0-9]/g, "-"), // Replace non-alphanumeric with dash
+          }));
+          setProjects(localProjects);
+        } else {
+          // In standalone mode, fetch from local API
+          const response = await fetch(getProjectsUrl());
+          if (response.ok) {
+            const data = await response.json();
+            setProjects(data.projects || []);
+          }
         }
       } catch (error) {
         console.error("Failed to load projects:", error);
