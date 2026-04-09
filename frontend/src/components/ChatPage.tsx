@@ -293,6 +293,31 @@ export function ChatPage() {
   // during the current streaming session (used to decide if input notification should fire)
   const notificationTriggeredRef = useRef(false);
 
+  // Ref to track previous isLoading state for detecting when AI finishes responding
+  const wasLoadingRef = useRef(false);
+
+  // Show input notification when AI finishes responding (isLoading changes from true to false)
+  useEffect(() => {
+    // Update the ref to track previous state
+    if (isLoading) {
+      wasLoadingRef.current = true;
+    }
+
+    // When isLoading changes from true to false, show input notification
+    // Only if no permission/plan notification was triggered
+    if (wasLoadingRef.current && !isLoading) {
+      wasLoadingRef.current = false;
+
+      // Show input notification if no permission/plan notification was triggered
+      if (!notificationTriggeredRef.current) {
+        showInputNotification();
+      }
+
+      // Reset the flag for the next request
+      notificationTriggeredRef.current = false;
+    }
+  }, [isLoading, showInputNotification]);
+
   const handlePermissionError = useCallback(
     (toolName: string, patterns: string[], toolUseId: string) => {
       notificationTriggeredRef.current = true;
@@ -433,12 +458,9 @@ export function ChatPage() {
           timestamp: Date.now(),
         });
       } finally {
-        // Show input notification if no permission/plan/command-loop notification was triggered
-        // and the request wasn't aborted (e.g. user switched away mid-stream)
-        if (!notificationTriggeredRef.current && !shouldAbort) {
-          showInputNotification();
-        }
-        notificationTriggeredRef.current = false;
+        // Note: Input notification will be shown via useEffect when isLoading becomes false.
+        // Don't reset notificationTriggeredRef here - it's needed by useEffect to determine
+        // whether a permission/plan notification was triggered during this session.
         resetRequestState();
       }
     },
