@@ -838,10 +838,12 @@ export function ChatPage() {
       const modifierPressed = isMac ? (e.metaKey && e.shiftKey) : (e.ctrlKey && e.shiftKey);
 
       if (modifierPressed && (e.key === "," || e.key === ".")) {
-        // Check if we're in integrated mode (embedded in iframe)
-        if (isIntegratedMode() && window.parent !== window) {
+        // Check if embedded in iframe (window.parent !== window)
+        // Send message to parent window (Open ACE) to switch workspace tabs
+        if (window.parent !== window) {
           e.preventDefault();
           const direction = e.key === "," ? "prev" : "next";
+          console.log('[qwen-code-webui] Sending tab-switch request to parent:', direction);
           window.parent.postMessage(
             {
               type: "qwen-code-tab-switch-request",
