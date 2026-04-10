@@ -3,7 +3,7 @@ import type { ProjectInfo, ProjectsResponse } from "../../shared/types.ts";
 import { logger } from "../utils/logger.ts";
 import { readDir, stat, remove } from "../utils/fs.ts";
 import { getHomeDir } from "../utils/os.ts";
-import { decodeProjectPath, encodeProjectPath } from "../utils/projectMapping.ts";
+import { decodeProjectPath } from "../utils/projectMapping.ts";
 
 /**
  * Handles GET /api/projects requests
