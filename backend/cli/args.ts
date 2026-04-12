@@ -16,6 +16,7 @@ export interface ParsedArgs {
   tokenSecret?: string;
   quotaCheckEnabled?: boolean;
   openaceApiUrl?: string;
+  authType?: string;
 }
 
 export function parseCliArgs(): ParsedArgs {
@@ -64,6 +65,10 @@ export function parseCliArgs(): ParsedArgs {
       "--openace-api-url <url>",
       "Open-ACE API URL for quota checking",
     )
+    .option(
+      "--auth-type <type>",
+      "Authentication type for Qwen CLI (e.g. openai, anthropic, gemini)",
+    )
     .option("-d, --debug", "Enable debug mode", false);
 
   // Parse arguments - Commander.js v14 handles this automatically
@@ -82,5 +87,6 @@ export function parseCliArgs(): ParsedArgs {
     tokenSecret: options.tokenSecret,
     quotaCheckEnabled: options.quotaCheckEnabled,
     openaceApiUrl: options.openaceApiUrl,
+    authType: options.authType,
   };
 }

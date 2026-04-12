@@ -32,6 +32,7 @@ export interface AppConfig {
   tokenSecret?: string; // Secret for Open-ACE integration token validation
   quotaCheckEnabled?: boolean; // Enable quota checking with Open-ACE
   openaceApiUrl?: string; // Open-ACE API URL for quota checking
+  authType?: string; // Authentication type for Qwen CLI
 }
 
 export function createApp(
@@ -68,6 +69,7 @@ export function createApp(
       cliPath: config.cliPath,
       quotaCheckEnabled: config.quotaCheckEnabled,
       openaceApiUrl: config.openaceApiUrl,
+      authType: config.authType,
     }),
   );
 

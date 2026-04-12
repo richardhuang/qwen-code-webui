@@ -12,5 +12,6 @@ export interface AppConfig {
   tokenSecret?: string; // Secret for Open-ACE integration token validation
   quotaCheckEnabled?: boolean; // Enable quota checking with Open-ACE
   openaceApiUrl?: string; // Open-ACE API URL for quota checking
+  authType?: string; // Authentication type for Qwen CLI (openai, anthropic, gemini, etc.)
   // Future configuration options can be added here
 }

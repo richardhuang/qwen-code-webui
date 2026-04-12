@@ -524,6 +524,128 @@ describe("Chat Handler - Permission Mode Tests", () => {
     });
   });
 
+  describe("AuthType Parameter Handling", () => {
+    it("should pass authType to Qwen SDK when configured", async () => {
+      const chatRequest: ChatRequest = {
+        message: "Test message",
+        requestId: "test-auth-type",
+      };
+
+      mockContext.var.config = {
+        cliPath: "/path/to/claude-cli",
+        authType: "openai",
+      };
+
+      mockContext.req.json = vi.fn().mockResolvedValue(chatRequest);
+
+      mockQuery.mockReturnValue({
+        [Symbol.asyncIterator]: async function* () {
+          yield {
+            type: "assistant",
+            message: { content: [{ type: "text", text: "Response" }] },
+            session_id: "test-session",
+            parent_tool_use_id: null,
+          } as any;
+        },
+        interrupt: vi.fn(),
+        next: vi.fn(),
+        return: vi.fn(),
+        throw: vi.fn(),
+      } as any);
+
+      await handleChatRequest(mockContext, requestAbortControllers);
+
+      expect(mockQuery).toHaveBeenCalledWith({
+        prompt: "Test message",
+        options: expect.objectContaining({
+          authType: "openai",
+          abortController: expect.any(AbortController),
+          pathToQwenExecutable: "/path/to/claude-cli",
+        }),
+      });
+    });
+
+    it("should not include authType in options when not configured", async () => {
+      const chatRequest: ChatRequest = {
+        message: "Test message",
+        requestId: "test-no-auth-type",
+      };
+
+      // No authType in config (default mock)
+      mockContext.var.config = {
+        cliPath: "/path/to/claude-cli",
+      };
+
+      mockContext.req.json = vi.fn().mockResolvedValue(chatRequest);
+
+      mockQuery.mockReturnValue({
+        [Symbol.asyncIterator]: async function* () {
+          yield {
+            type: "assistant",
+            message: { content: [{ type: "text", text: "Response" }] },
+            session_id: "test-session",
+            parent_tool_use_id: null,
+          } as any;
+        },
+        interrupt: vi.fn(),
+        next: vi.fn(),
+        return: vi.fn(),
+        throw: vi.fn(),
+      } as any);
+
+      await handleChatRequest(mockContext, requestAbortControllers);
+
+      const queryCall = mockQuery.mock.calls[0][0];
+      expect(queryCall.options).not.toHaveProperty("authType");
+    });
+
+    it("should pass authType alongside other parameters", async () => {
+      const chatRequest: ChatRequest = {
+        message: "Test all params with auth",
+        requestId: "test-auth-all",
+        sessionId: "session-456",
+        permissionMode: "plan",
+        workingDirectory: "/project/path",
+      };
+
+      mockContext.var.config = {
+        cliPath: "/path/to/claude-cli",
+        authType: "anthropic",
+      };
+
+      mockContext.req.json = vi.fn().mockResolvedValue(chatRequest);
+
+      mockQuery.mockReturnValue({
+        [Symbol.asyncIterator]: async function* () {
+          yield {
+            type: "assistant",
+            message: { content: [{ type: "text", text: "Response" }] },
+            session_id: "test-session",
+            parent_tool_use_id: null,
+          } as any;
+        },
+        interrupt: vi.fn(),
+        next: vi.fn(),
+        return: vi.fn(),
+        throw: vi.fn(),
+      } as any);
+
+      await handleChatRequest(mockContext, requestAbortControllers);
+
+      expect(mockQuery).toHaveBeenCalledWith({
+        prompt: "Test all params with auth",
+        options: expect.objectContaining({
+          authType: "anthropic",
+          permissionMode: "plan",
+          resume: "session-456",
+          cwd: "/project/path",
+          abortController: expect.any(AbortController),
+          pathToQwenExecutable: "/path/to/claude-cli",
+        }),
+      });
+    });
+  });
+
   describe("Abort Controller Management with Permission Mode", () => {
     it("should manage abort controller correctly with permissionMode", async () => {
       const chatRequest: ChatRequest = {

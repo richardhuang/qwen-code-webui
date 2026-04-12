@@ -39,6 +39,7 @@ async function* executeQwenCommand(
   workingDirectory?: string,
   permissionMode?: string,
   model?: string,
+  authType?: string,
 ): AsyncGenerator<StreamResponse> {
   let abortController: AbortController;
 
@@ -71,6 +72,7 @@ async function* executeQwenCommand(
         ...(workingDirectory ? { cwd: workingDirectory } : {}),
         ...(mappedPermissionMode ? { permissionMode: mappedPermissionMode } : {}),
         ...(model ? { model } : {}),
+        ...(authType ? { authType } : {}),
       },
     })) {
       // Debug logging of raw SDK messages with detailed content
@@ -115,7 +117,7 @@ export async function handleChatRequest(
   requestAbortControllers: Map<string, AbortController>,
 ) {
   const chatRequest: ChatRequest = await c.req.json();
-  const { cliPath } = c.var.config;
+  const { cliPath, authType } = c.var.config;
 
   logger.chat.debug(
     "Received chat request {*}",
@@ -139,6 +141,7 @@ export async function handleChatRequest(
           chatRequest.workingDirectory,
           chatRequest.permissionMode,
           chatRequest.model,
+          authType,
         )) {
           const data = JSON.stringify(chunk) + "\n";
           controller.enqueue(new TextEncoder().encode(data));
